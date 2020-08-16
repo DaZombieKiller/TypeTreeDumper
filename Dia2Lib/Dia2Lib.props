@@ -1,0 +1,10 @@
+<Project>
+    <PropertyGroup>
+        <DiaSdkDir>$(VSInstallRoot)\DIA SDK</DiaSdkDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="Dia2Lib" HintPath="$(MSBuildThisFileDirectory)Dia2Lib.dll" />
+        <Content Include="$(DiaSdkDir)\bin\amd64\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+</Project>

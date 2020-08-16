@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>Unity</RootNamespace>
+        <TargetFramework>net471</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.0" />
+    </ItemGroup>
+</Project>

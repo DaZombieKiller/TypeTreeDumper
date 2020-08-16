@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>TypeTreeDumper</RootNamespace>
+        <TargetFramework>net471</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="EasyHook" Version="2.7.7097" />
+        <ProjectReference Include="..\Unity\Unity.csproj" />
+    </ItemGroup>
+    
+    <Import Project="../Dia2Lib/Dia2Lib.props" />
+</Project>
