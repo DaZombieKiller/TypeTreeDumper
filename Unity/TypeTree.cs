@@ -30,7 +30,7 @@ namespace Unity
         public string GetString(uint offset)
         {
             if (offset > int.MaxValue)
-                return Marshal.PtrToStringAnsi(IntPtr.Add(strings.BufferBegin, (int)(0x7fffffff & offset)));
+                return Marshal.PtrToStringAnsi(IntPtr.Add(strings.BufferBegin, (int)(int.MaxValue & offset)));
 
             return Marshal.PtrToStringAnsi(new IntPtr(tree.StringBuffer.Ptr + offset));
         }
