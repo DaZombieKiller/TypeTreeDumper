@@ -22,8 +22,8 @@ namespace TypeTreeDumper
                 $"-nographics -batchmode -{command} \"{project}\"",
                 0,
                 InjectionOptions.DoNotRequireStrongName,
-                typeof(IpcInterface).Assembly.Location,
-                typeof(IpcInterface).Assembly.Location,
+                typeof(EntryPoint).Assembly.Location,
+                typeof(EntryPoint).Assembly.Location,
                 out _,
                 channel
             );

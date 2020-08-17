@@ -1,68 +1,29 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace Unity
 {
-    public unsafe class TypeTreeNode
+    public unsafe partial class TypeTreeNode
     {
-        TypeTreeNodeUnion* union;
+        readonly TypeTree owner;
 
-        UnityVersion version;
+        readonly ITypeTreeNodeImpl node;
 
-        TypeTree owner;
+        public string Name => owner.GetString(node.NameStrOffset);
 
         public TypeTreeNode(UnityVersion version, TypeTree owner, IntPtr address)
         {
-            this.owner   = owner;
-            this.version = version;
-            union        = (TypeTreeNodeUnion*)address;
+            this.owner = owner;
+
+            if (version >= UnityVersion.Unity2019_1)
+                node = new V2(address);
+            else
+                node = new V1(address);
         }
 
-        public string Name
+        interface ITypeTreeNodeImpl
         {
-            get
-            {
-                if (version >= UnityVersion.Unity2019_1)
-                    return owner.GetString(union->V2.NameStrOffset);
-                else
-                    return owner.GetString(union->V1.NameStrOffset);
-            }
-        }
-
-        [StructLayout(LayoutKind.Explicit)]
-        struct TypeTreeNodeUnion
-        {
-            [FieldOffset(0)]
-            public TypeTreeNodeV1 V1;
-
-            [FieldOffset(0)]
-            public TypeTreeNodeV2 V2;
-        }
-
-        struct TypeTreeNodeV1
-        {
-            public short Version;
-            public byte Level;
-            public TypeFlags TypeFlags;
-            public uint TypeStrOffset;
-            public uint NameStrOffset;
-            public int ByteSize;
-            public int Index;
-            public TransferMetaFlags MetaFlag;
-        }
-
-        // 2019.1+
-        struct TypeTreeNodeV2
-        {
-            public short Version;
-            public byte Level;
-            public TypeFlags TypeFlags;
-            public uint TypeStrOffset;
-            public uint NameStrOffset;
-            public int ByteSize;
-            public int Index;
-            public TransferMetaFlags MetaFlag;
-            public ulong RefTypeHash;
+            uint NameStrOffset { get; }
+            ref byte GetPinnableReference();
         }
     }
 }

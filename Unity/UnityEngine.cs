@@ -1,5 +1,6 @@
 ﻿namespace Unity
 {
+    // todo: should all classes just take a UnityEngine argument?
     public class UnityEngine
     {
         public UnityVersion Version { get; }
@@ -14,7 +15,7 @@
         {
             Version       = version;
             CommonString  = new CommonString(resolver);
-            TypeTreeCache = new TypeTreeCache(version, resolver);
+            TypeTreeCache = new TypeTreeCache(version, CommonString, resolver);
             RuntimeTypes  = new RuntimeTypeArray(resolver);
         }
     }
