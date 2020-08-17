@@ -6,11 +6,16 @@ namespace Unity
     public partial class TypeTreeNode
     {
         // 2019.1+
-        unsafe class V2 : ITypeTreeNodeImpl
+        internal unsafe class V2 : ITypeTreeNodeImpl
         {
-            public TypeTreeNode Node;
+            internal TypeTreeNode Node;
 
             public uint NameStrOffset => Node.NameStrOffset;
+
+            internal V2(TypeTreeNode node)
+            {
+                Node = node;
+            }
 
             public V2(IntPtr address)
             {
@@ -25,7 +30,7 @@ namespace Unity
                 return ref Unsafe.As<TypeTreeNode, byte>(ref Node);
             }
 
-            public struct TypeTreeNode
+            internal struct TypeTreeNode
             {
                 public short Version;
                 public byte Level;

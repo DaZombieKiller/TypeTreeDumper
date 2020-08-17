@@ -10,6 +10,12 @@ namespace Unity
 
         public string Name => owner.GetString(node.NameStrOffset);
 
+        internal TypeTreeNode(ITypeTreeNodeImpl impl, TypeTree owner)
+        {
+            this.owner = owner;
+            node       = impl;
+        }
+
         public TypeTreeNode(UnityVersion version, TypeTree owner, IntPtr address)
         {
             this.owner = owner;
@@ -20,7 +26,7 @@ namespace Unity
                 node = new V1(address);
         }
 
-        interface ITypeTreeNodeImpl
+        internal interface ITypeTreeNodeImpl
         {
             uint NameStrOffset { get; }
             ref byte GetPinnableReference();

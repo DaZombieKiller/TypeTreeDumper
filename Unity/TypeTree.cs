@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Unity
@@ -12,14 +13,13 @@ namespace Unity
         public TypeTree(UnityVersion version, CommonString strings, SymbolResolver resolver)
         {
             if (version >= UnityVersion.Unity2019_1 && version < UnityVersion.Unity2019_3)
-                tree = new V2(resolver);
+                tree = new V2(this, resolver);
             else if (version >= UnityVersion.Unity2019_3)
-                tree = new V3(resolver);
+                tree = new V3(this, resolver);
             else
-                tree = new V1(resolver);
+                tree = new V1(this, resolver);
 
             this.strings = strings;
-            // todo: store size of TypeTreeNode for indexing nodes array
         }
 
         public ref byte GetPinnableReference()
@@ -37,7 +37,8 @@ namespace Unity
 
         interface ITypeTreeImpl
         {
-            DynamicArray<byte> StringBuffer { get; }
+            DynamicArray<byte> StringBuffer   { get; }
+            IReadOnlyList<TypeTreeNode> Nodes { get; }
             ref byte GetPinnableReference();
         }
     }
