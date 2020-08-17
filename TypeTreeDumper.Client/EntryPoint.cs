@@ -49,38 +49,48 @@ namespace TypeTreeDumper
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public void Run(RemoteHooking.IContext context, string channelName)
         {
-            resolver = new DiaSymbolResolver(session, module);
-
-            // Wait for Unity to initialize before grabbing data
-            using (var hook = CreateEngineInitializationHook())
+            try
             {
-                RemoteHooking.WakeUpProcess();
+                resolver = new DiaSymbolResolver(session, module);
 
-                while (!engineLoaded)
+                // Wait for Unity to initialize before grabbing data
+                using (var hook = CreateEngineInitializationHook())
                 {
-                    server.Ping();
-                    Thread.Sleep(500);
+                    RemoteHooking.WakeUpProcess();
+
+                    while (!engineLoaded)
+                    {
+                        server.Ping();
+                        Thread.Sleep(500);
+                    }
                 }
+
+                GetUnityVersion   = resolver.ResolveFunction<GetUnityVersionDelegate>("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ");
+                ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
+
+                if (GetUnityVersion is null || ParseUnityVersion is null)
+                {
+                    server.WriteLine("Error: Could not resolve Application_Bindings::GetUnityVersion and/or UnityVersion::UnityVersion.");
+                    return;
+                }
+
+                ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(GetUnityVersion()));
+                server.WriteLine($"UnityVersion {version}");
+                var engine = new UnityEngine(version, resolver);
+
+                foreach (var type in engine.RuntimeTypes)
+                    server.WriteLine(type.Name);
             }
-
-            GetUnityVersion   = resolver.ResolveFunction<GetUnityVersionDelegate>("?GetUnityVersion@Application_Bindings@@YAPEBDXZ");
-            ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
-
-            if (GetUnityVersion is null || ParseUnityVersion is null)
+            catch (Exception ex)
             {
-                server.WriteLine("Error: Could not resolve Application_Bindings::GetUnityVersion and/or UnityVersion::UnityVersion.");
-                return;
+                server.WriteLine(ex.ToString());
             }
-
-            ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(GetUnityVersion()));
-            var engine = new UnityEngine(version, resolver);
-
-            foreach (var type in engine.RuntimeTypes)
-                server.WriteLine(type.Name);
-
-            server.WriteLine();
-            server.WriteLine("Exiting");
-            Environment.Exit(0);
+            finally
+            {
+                server.WriteLine();
+                server.WriteLine("Exiting");
+                Environment.Exit(0);
+            }
         }
 
         LocalHook CreateEngineInitializationHook()
