@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -17,8 +18,7 @@ namespace Unity
 
         unsafe public RuntimeTypeArray(SymbolResolver resolver)
         {
-            var getTypes     = resolver.ResolveFunction<GetRuntimeTypesDelegate>("?GetRuntimeTypes@RTTI@@SAAEAURuntimeTypeArray@1@XZ");
-            var runtimeTypes = getTypes.Invoke();
+            var runtimeTypes = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@0URuntimeTypeArray@1@A");
             types            = new List<RuntimeTypeInfo>(runtimeTypes->Count);
 
             for (int i = 0; i < runtimeTypes->Count; i++)
