@@ -44,6 +44,7 @@ namespace TypeTreeDumper
             dia    = new DiaSourceClass();
             dia.loadDataForExe(module.FileName, null, null);
             dia.openSession(out session);
+            AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
@@ -81,10 +82,6 @@ namespace TypeTreeDumper
                 foreach (var type in engine.RuntimeTypes)
                     server.WriteLine(type.Name);
             }
-            catch (Exception ex)
-            {
-                server.WriteLine(ex.ToString());
-            }
             finally
             {
                 server.WriteLine();
@@ -108,6 +105,11 @@ namespace TypeTreeDumper
 
             hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
             return hook;
+        }
+
+        void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+        {
+            server.WriteLine(args.ExceptionObject.ToString());
         }
     }
 }
