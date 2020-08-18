@@ -62,7 +62,7 @@ namespace TypeTreeDumper
 
                 if (GetUnityVersion is null || ParseUnityVersion is null)
                 {
-                    server.WriteLine("Error: Could not resolve GameEngineVersion::PlatformWrapper::UnityEngine and/or UnityVersion::UnityVersion.");
+                    server.WriteLine("Error: Could not resolve UnityEngine::PlatformWrapper::GameEngineVersion and/or UnityVersion::UnityVersion.");
                     return;
                 }
 
