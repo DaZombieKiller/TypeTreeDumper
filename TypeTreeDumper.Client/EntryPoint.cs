@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using EasyHook;
-using Dia2Lib;
 using Unity;
 
 namespace TypeTreeDumper
@@ -15,11 +14,7 @@ namespace TypeTreeDumper
 
         readonly ProcessModule module;
 
-        readonly IDiaDataSource dia;
-
-        readonly IDiaSession session;
-
-        SymbolResolver resolver;
+        readonly SymbolResolver resolver;
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
@@ -39,11 +34,9 @@ namespace TypeTreeDumper
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public EntryPoint(RemoteHooking.IContext context, string channelName)
         {
-            module = Process.GetCurrentProcess().MainModule;
-            server = RemoteHooking.IpcConnectClient<IpcInterface>(channelName);
-            dia    = new DiaSourceClass();
-            dia.loadDataForExe(module.FileName, null, null);
-            dia.openSession(out session);
+            module   = Process.GetCurrentProcess().MainModule;
+            server   = RemoteHooking.IpcConnectClient<IpcInterface>(channelName);
+            resolver = new DiaSymbolResolver(module);
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         }
 
@@ -52,8 +45,6 @@ namespace TypeTreeDumper
         {
             try
             {
-                resolver = new DiaSymbolResolver(session, module);
-
                 // Wait for Unity to initialize before grabbing data
                 using (var hook = CreateEngineInitializationHook())
                 {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 using Dia2Lib;
 using Unity;
 
@@ -8,15 +9,15 @@ namespace TypeTreeDumper
 {
     public class DiaSymbolResolver : SymbolResolver
     {
-        readonly IDiaSession session;
+        readonly ThreadLocal<IDiaSession> session;
 
         readonly ProcessModule module;
 
         readonly Dictionary<string, IntPtr> cache;
 
-        public DiaSymbolResolver(IDiaSession session, ProcessModule module)
+        public DiaSymbolResolver(ProcessModule module)
         {
-            this.session = session;
+            session      = new ThreadLocal<IDiaSession>(CreateSession);
             this.module  = module;
             cache        = new Dictionary<string, IntPtr>();
         }
@@ -26,7 +27,7 @@ namespace TypeTreeDumper
             if (cache.TryGetValue(name, out IntPtr address))
                 return address;
 
-            session.globalScope.findChildren(
+            session.Value.globalScope.findChildren(
                 SymTagEnum.SymTagPublicSymbol,
                 name,
                 0,
@@ -40,6 +41,14 @@ namespace TypeTreeDumper
             address    = IntPtr.Add(module.BaseAddress, (int)symbol.relativeVirtualAddress);
             cache.Add(name, address);
             return address;
+        }
+
+        IDiaSession CreateSession()
+        {
+            var dia = new DiaSourceClass();
+            dia.loadDataForExe(module.FileName, null, null);
+            dia.openSession(out IDiaSession session);
+            return session;
         }
     }
 }
