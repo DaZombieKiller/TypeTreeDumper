@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
+using System.Diagnostics;
+using System.Collections.Concurrent;
 using Dia2Lib;
 using Unity;
 
@@ -13,13 +13,13 @@ namespace TypeTreeDumper
 
         readonly ProcessModule module;
 
-        readonly Dictionary<string, IntPtr> cache;
+        readonly ConcurrentDictionary<string, IntPtr> cache;
 
         public DiaSymbolResolver(ProcessModule module)
         {
             session      = new ThreadLocal<IDiaSession>(CreateSession);
             this.module  = module;
-            cache        = new Dictionary<string, IntPtr>();
+            cache        = new ConcurrentDictionary<string, IntPtr>();
         }
 
         public override IntPtr Resolve(string name)
@@ -39,7 +39,7 @@ namespace TypeTreeDumper
 
             var symbol = symbols.Item(0);
             address    = IntPtr.Add(module.BaseAddress, (int)symbol.relativeVirtualAddress);
-            cache.Add(name, address);
+            cache.TryAdd(name, address);
             return address;
         }
 
