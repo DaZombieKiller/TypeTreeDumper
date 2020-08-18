@@ -1,12 +1,22 @@
 ﻿using System;
 using System.IO;
+using System.Diagnostics;
 using System.Runtime.Remoting;
 using EasyHook;
+using System.Runtime.InteropServices;
 
 namespace TypeTreeDumper
 {
     class Program
     {
+        static Process UnityProcess;
+
+        [DllImport("kernel32")]
+        static extern bool SetConsoleCtrlHandler(ConsoleCtrlHandler handler, bool add);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        delegate bool ConsoleCtrlHandler(CtrlType sig);
+
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -19,16 +29,37 @@ namespace TypeTreeDumper
             RemoteHooking.IpcCreateServer(ref channel, WellKnownObjectMode.Singleton, server);
             RemoteHooking.CreateAndInject(
                 args[0],
-                $"-nographics -batchmode -{command} \"{project}\"",
+                $"-logfile - -nographics -batchmode -{command} \"{project}\"",
                 0,
                 InjectionOptions.DoNotRequireStrongName,
                 typeof(EntryPoint).Assembly.Location,
                 typeof(EntryPoint).Assembly.Location,
-                out _,
+                out int processId,
                 channel
             );
-
+            
+            UnityProcess = Process.GetProcessById(processId);
+            SetConsoleCtrlHandler(OnConsoleCtrl, add: true);
             Console.ReadKey();
+            OnConsoleCtrl(CtrlType.CloseEvent);
+        }
+
+        static bool OnConsoleCtrl(CtrlType sig)
+        {
+            if (!UnityProcess.HasExited)
+                UnityProcess.Kill();
+
+            Environment.Exit(0);
+            return true;
+        }
+
+        enum CtrlType
+        {
+            CEvent,
+            BreakEvent,
+            CloseEvent,
+            LogoffEvent,
+            ShutdownEvent
         }
     }
 }
