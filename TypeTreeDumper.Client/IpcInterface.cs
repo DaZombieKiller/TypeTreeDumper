@@ -17,5 +17,10 @@ namespace TypeTreeDumper
         {
             Console.WriteLine(value);
         }
+
+        public void WriteLine(string value, params object[] args)
+        {
+            Console.WriteLine(string.Format(value, args));
+        }
     }
 }

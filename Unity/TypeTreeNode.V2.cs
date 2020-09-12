@@ -10,7 +10,21 @@ namespace Unity
         {
             internal TypeTreeNode Node;
 
+            public short Version => Node.Version;
+
+            public byte Level => Node.Level;
+
+            public TypeFlags TypeFlags => Node.TypeFlags;
+
+            public uint TypeStrOffset => Node.TypeStrOffset;
+
             public uint NameStrOffset => Node.NameStrOffset;
+
+            public int ByteSize => Node.ByteSize;
+
+            public int Index => Node.Index;
+
+            public TransferMetaFlags MetaFlag => Node.MetaFlag;
 
             internal V2(TypeTreeNode node)
             {

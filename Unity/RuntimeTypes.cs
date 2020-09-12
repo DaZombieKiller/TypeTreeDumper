@@ -15,15 +15,30 @@ namespace Unity
 
         public int Count => types.Count;
 
-        unsafe public RuntimeTypeArray(SymbolResolver resolver)
+        unsafe public RuntimeTypeArray(UnityVersion version, SymbolResolver resolver)
         {
-            var runtimeTypes = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@0URuntimeTypeArray@1@A");
-            types            = new List<RuntimeTypeInfo>(runtimeTypes->Count);
 
-            for (int i = 0; i < runtimeTypes->Count; i++)
+            NativeTypeArray* runtimeTypes;
+            if (version >= UnityVersion.Unity2017_3) 
             {
-                types.Add(new RuntimeTypeInfo(*(&runtimeTypes->First)[i]));
+                runtimeTypes  = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@0URuntimeTypeArray@1@A");
+                types = new List<RuntimeTypeInfo>(runtimeTypes->Count);
+                for (int i = 0; i < runtimeTypes->Count; i++)
+                {
+                    var info = *(&runtimeTypes->First)[i];
+                    types.Add(new RuntimeTypeInfo(info.V2));
+                }
+            } else
+            {
+                runtimeTypes = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@2URuntimeTypeArray@1@A");
+                types = new List<RuntimeTypeInfo>(runtimeTypes->Count);
+                for (int i = 0; i < runtimeTypes->Count; i++)
+                {
+                    var info = *(&runtimeTypes->First)[i];
+                    types.Add(new RuntimeTypeInfo(info.V1));
+                }
             }
+
         }
 
         public IEnumerator<RuntimeTypeInfo> GetEnumerator()
@@ -39,7 +54,7 @@ namespace Unity
         unsafe struct NativeTypeArray
         {
             public int Count;
-            public RuntimeTypeInfo.NativeTypeInfo* First;
+            public RuntimeTypeInfo.NativeTypeInfoUnion* First;
         }
     }
 }

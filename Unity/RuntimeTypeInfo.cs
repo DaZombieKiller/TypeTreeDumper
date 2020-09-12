@@ -1,31 +1,114 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Unity
 {
-    public class RuntimeTypeInfo
+    public unsafe class RuntimeTypeInfo
     {
+        NativeTypeInfoUnion native;
+
+        public ref byte GetPinnableReference()
+        {
+            return ref Unsafe.As<NativeTypeInfoUnion, byte>(ref native);
+        }
+
         public string Name { get; }
 
         public string Namespace { get; }
 
         public string Module { get; }
 
-        internal RuntimeTypeInfo(NativeTypeInfo native)
+        public PersistentTypeID PersistentTypeID { get; }
+
+        public RuntimeTypeInfo Base { get; }
+
+        public int Size { get; }
+
+        public uint TypeIndex { get;  }
+
+        public uint DescendantCount { get; }
+
+        public bool IsAbstract { get; }
+
+        public bool IsSealed { get; }
+
+        public bool IsEditorOnly { get; }
+
+        public bool IsStripped { get; }
+
+        public IntPtr Attributes { get; }
+
+        public ulong AttributeCount { get; }
+
+
+        internal RuntimeTypeInfo(NativeTypeInfoV1 native)
         {
-            Name      = native.ClassName      != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassName)      : null;
+            this.native = new NativeTypeInfoUnion() { V1 = native };
+            Base = native.Base != null ? new RuntimeTypeInfo(*native.Base) : null;
+            Name = native.ClassName != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassName) : null;
             Namespace = native.ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassNamespace) : null;
-            Module    = native.Module         != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.Module)         : null;
+            PersistentTypeID = native.PersistentTypeID;
+            Size = native.Size;
+            TypeIndex = native.DerivedFromInfo.TypeIndex;
+            DescendantCount = native.DerivedFromInfo.DescendantCount;
+            IsAbstract = native.IsAbstract;
+            IsSealed = native.IsSealed;
+            IsEditorOnly = native.IsEditorOnly;
         }
 
-        internal unsafe struct NativeTypeInfo
+        internal RuntimeTypeInfo(NativeTypeInfoV2 native)
         {
-            public NativeTypeInfo* Base;
+            this.native = new NativeTypeInfoUnion() { V2 = native };
+            Base             = native.Base           != null        ? new RuntimeTypeInfo(*native.Base)              : null;
+            Name             = native.ClassName      != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassName)      : null;
+            Namespace        = native.ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassNamespace) : null;
+            Module           = native.Module         != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.Module)         : null;
+            PersistentTypeID = native.PersistentTypeID;
+            Size = native.Size;
+            TypeIndex = native.DerivedFromInfo.TypeIndex;
+            DescendantCount = native.DerivedFromInfo.DescendantCount;
+            IsAbstract       = native.IsAbstract;
+            IsSealed = native.IsSealed;
+            IsEditorOnly = native.IsEditorOnly;
+            IsStripped = native.IsStripped;
+            Attributes = native.Attributes;
+            AttributeCount = native.AttributeCount;
+        }
+        [StructLayout(LayoutKind.Explicit)]
+        internal struct NativeTypeInfoUnion
+        {
+            [FieldOffset(0)]
+            public NativeTypeInfoV1 V1;
+
+            [FieldOffset(0)]
+            public NativeTypeInfoV2 V2;
+        }
+        internal unsafe struct NativeTypeInfoV1
+        {
+            public NativeTypeInfoV1* Base;
+            public IntPtr Factory;
+            public IntPtr ClassName;
+            public IntPtr ClassNamespace;
+            public PersistentTypeID PersistentTypeID;
+            public int Size;
+            public DerivedFromInfo DerivedFromInfo;
+            [MarshalAs(UnmanagedType.U1)]
+            public bool IsAbstract;
+            [MarshalAs(UnmanagedType.U1)]
+            public bool IsSealed;
+            [MarshalAs(UnmanagedType.U1)]
+            public bool IsEditorOnly;
+        }
+
+        internal unsafe struct NativeTypeInfoV2
+        {
+            public NativeTypeInfoV2* Base;
             public IntPtr Factory;
             public IntPtr ClassName;
             public IntPtr ClassNamespace;
             public IntPtr Module;
-            public int PersistentTypeID;
+            public PersistentTypeID PersistentTypeID;
             public int Size;
             public DerivedFromInfo DerivedFromInfo;
             [MarshalAs(UnmanagedType.U1)]

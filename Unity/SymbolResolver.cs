@@ -13,6 +13,9 @@ namespace Unity
             var address = Resolve(name);
 
             if (address == IntPtr.Zero)
+                throw new InvalidOperationException($"Could not find {name}");
+
+            if (address == IntPtr.Zero)
                 return null;
 
             return Marshal.GetDelegateForFunctionPointer<T>(address);
@@ -21,7 +24,12 @@ namespace Unity
         public unsafe T* Resolve<T>(string name)
             where T : unmanaged
         {
-            return (T*)Resolve(name);
+            var address = Resolve(name);
+
+            if (address == IntPtr.Zero)
+                throw new InvalidOperationException($"Could not find {name}");
+
+            return (T*)address;
         }
     }
 }

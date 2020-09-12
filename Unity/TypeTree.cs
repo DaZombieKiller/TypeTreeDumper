@@ -10,6 +10,7 @@ namespace Unity
 
         readonly ITypeTreeImpl tree;
 
+
         public TypeTree(UnityVersion version, CommonString strings, SymbolResolver resolver)
         {
             if (version < UnityVersion.Unity2019_1)
@@ -35,11 +36,26 @@ namespace Unity
             return Marshal.PtrToStringAnsi(new IntPtr(tree.StringBuffer.Ptr + offset));
         }
 
+        public void CreateNodes()
+        {
+            tree.CreateNodes(this);
+            StringBuffer = new byte[tree.StringBuffer.Size];
+            fixed (byte* destination = StringBuffer)
+                Buffer.MemoryCopy(tree.StringBuffer.Ptr, destination, StringBuffer.Length, StringBuffer.Length);
+        }
+
+        public TypeTreeNode this[int index] => tree.Nodes[index];
+
+        public int Count => tree.Nodes.Count;
+
+        public byte[] StringBuffer;
+
         interface ITypeTreeImpl
         {
-            DynamicArray<byte> StringBuffer   { get; }
+            DynamicArray<byte> StringBuffer { get; }
             IReadOnlyList<TypeTreeNode> Nodes { get; }
             ref byte GetPinnableReference();
+            void CreateNodes(TypeTree tree);
         }
     }
 }

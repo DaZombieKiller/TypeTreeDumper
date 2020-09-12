@@ -15,7 +15,9 @@ namespace Unity
 
             public DynamicArray<byte> StringBuffer => Tree.Data->StringBuffer;
 
-            public IReadOnlyList<TypeTreeNode> Nodes { get; }
+            public IReadOnlyList<TypeTreeNode> Nodes => m_Nodes;
+
+            private TypeTreeNode[] m_Nodes;
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
             delegate void TypeTreeDelegate(out TypeTree tree, MemLabelId* label);
@@ -23,9 +25,8 @@ namespace Unity
             public V3(ManagedTypeTree owner, SymbolResolver resolver)
             {
                 var constructor = resolver.ResolveFunction<TypeTreeDelegate>("??0TypeTree@@QEAA@AEBUMemLabelId@@@Z");
-                var label       = resolver.Resolve<MemLabelId>("?kMemTypeTree@@3UMemLabelId@@A");
+                var label = resolver.Resolve<MemLabelId>("?kMemTypeTree@@3UMemLabelId@@A");
                 constructor.Invoke(out Tree, label);
-                Nodes = CreateNodes(owner);
             }
 
             public ref byte GetPinnableReference()
@@ -33,14 +34,13 @@ namespace Unity
                 return ref Unsafe.As<TypeTree, byte>(ref Tree);
             }
 
-            IReadOnlyList<TypeTreeNode> CreateNodes(ManagedTypeTree owner)
+            public void CreateNodes(ManagedTypeTree owner)
             {
                 var nodes = new TypeTreeNode[Tree.Data->Nodes.Size];
 
                 for (int i = 0; i < nodes.Length; i++)
                     nodes[i] = new TypeTreeNode(new TypeTreeNode.V2(Tree.Data->Nodes.Ptr[i]), owner);
-
-                return nodes;
+                m_Nodes = nodes;
             }
 
             internal struct TypeTree
