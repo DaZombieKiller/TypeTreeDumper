@@ -17,9 +17,9 @@ namespace Unity
             if (version < UnityVersion.Unity2019_1)
                 tree = new V1(this, resolver);
             else if (version < UnityVersion.Unity2019_3)
-                tree = new V2(this, resolver);
+                tree = new V2019_1(this, resolver);
             else
-                tree = new V3(this, resolver);
+                tree = new V2019_3(this, resolver);
 
             this.strings = strings;
         }
