@@ -145,9 +145,6 @@ namespace Unity
 
         public void DestroyIfNotSingletonOrPersistent(NativeObject obj, PersistentTypeID persistentTypeID)
         {
-            if (obj == null) throw new InvalidOperationException("NativeObject is null");
-            if (s_InstanceIDToObject == null) throw new InvalidOperationException("s_InstanceIDToObject is null");
-            if (s_DestroyImmediate == null) throw new InvalidOperationException("s_DestroyImmediate is null");
             if (obj.IsPersistent)
                 return;
 
