@@ -3,19 +3,17 @@ using System.Collections.Specialized;
 
 namespace Unity
 {
-    public unsafe class NativeObject : IDisposable
+    public partial class NativeObject : IDisposable
     {
-        NativeObjectV1* nativeObject;
+        INativeObjectImpl nativeObject;
 
         NativeObjectFactory factory;
 
         PersistentTypeID persistentTypeID;
 
-        public IntPtr* VirtualFunctionTable => nativeObject->VirtualFunctionTable;
+        public int InstanceID => nativeObject.InstanceID;
 
-        public int InstanceID => nativeObject->InstanceID;
-
-        public IntPtr Pointer => new IntPtr(nativeObject);
+        public IntPtr Pointer => nativeObject.Pointer;
 
         static readonly BitVector32.Section MemLabelIdentifierSection = BitVector32.CreateSection(1 << 11);
 
@@ -30,15 +28,16 @@ namespace Unity
 
         public NativeObject(IntPtr ptr, NativeObjectFactory factory, PersistentTypeID persistentTypeID)
         {
-            if (ptr.ToInt64() == 0) throw new ArgumentException("Object Ptr cannot be null");
-            nativeObject = (NativeObjectV1*)ptr;
+            if (ptr == IntPtr.Zero)
+                throw new ArgumentNullException(nameof(ptr));
+            nativeObject = new V1(ptr);
             this.factory = factory;
             this.persistentTypeID = persistentTypeID;
         }
 
         public void Dispose()
         {
-            if ((IntPtr)nativeObject != IntPtr.Zero)
+            if (nativeObject != null)
             {
                 factory.DestroyIfNotSingletonOrPersistent(this, persistentTypeID);
             }
@@ -46,34 +45,29 @@ namespace Unity
 
         public byte TemporaryFlags
         {
-            get { return (byte)nativeObject->bits[TemporaryFlagsSection]; }
-            set { nativeObject->bits[TemporaryFlagsSection] = value; }
+            get { return (byte)nativeObject.Bits[TemporaryFlagsSection]; }
         }
 
         public HideFlags HideFlags
         {
-            get { return (HideFlags)nativeObject->bits[HideFlagsSection]; }
-            set { nativeObject->bits[HideFlagsSection] = (int)value; }
+            get { return (HideFlags)nativeObject.Bits[HideFlagsSection]; }
         }
 
         public bool IsPersistent
         {
-            get { return nativeObject->bits[IsPersistentSection] != 0; }
-            set { nativeObject->bits[IsPersistentSection] = value ? 1 : 0; }
+            get { return nativeObject.Bits[IsPersistentSection] != 0; }
         }
 
         public uint CachedTypeIndex
         {
-            get { return (uint)nativeObject->bits[CachedTypeIndexSection]; }
-            set { nativeObject->bits[CachedTypeIndexSection] = (int)value; }
+            get { return (uint)nativeObject.Bits[CachedTypeIndexSection]; }
         }
 
-        struct NativeObjectV1
+        interface INativeObjectImpl
         {
-            public IntPtr* VirtualFunctionTable;
-            public int InstanceID;
-            public BitVector32 bits;
-            // There are more fields but they aren't needed.
+            int InstanceID { get; }
+            BitVector32 Bits { get; }
+            IntPtr Pointer { get; }
         }
     }
 }
