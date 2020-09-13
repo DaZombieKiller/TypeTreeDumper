@@ -13,13 +13,19 @@ namespace Unity
         {
         }
 
-        public UnresolvedSymbolException(string message, Exception inner)
-            : base(message, inner)
+        public UnresolvedSymbolException(Exception inner)
+            : base(DefaultMessage, inner)
         {
         }
 
         public UnresolvedSymbolException(string symbol)
             : base(DefaultMessage)
+        {
+            SymbolName = symbol;
+        }
+
+        public UnresolvedSymbolException(string symbol, Exception inner)
+            : base(DefaultMessage, inner)
         {
             SymbolName = symbol;
         }
@@ -49,5 +55,4 @@ namespace Unity
             }
         }
     }
-
 }
