@@ -22,7 +22,7 @@ namespace TypeTreeDumper
             cache        = new ConcurrentDictionary<string, IntPtr>();
         }
 
-        public override IntPtr Resolve(string name)
+        protected override IntPtr GetAddressOrZero(string name)
         {
             if (cache.TryGetValue(name, out IntPtr address))
                 return address;
