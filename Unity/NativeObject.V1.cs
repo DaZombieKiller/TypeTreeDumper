@@ -22,9 +22,9 @@ namespace Unity
 
             internal struct NativeObject
             {
-                public IntPtr* VirtualFunctionTable { get; }
-                public int InstanceID { get; }
-                public BitVector32 bits { get; }
+                public IntPtr* VirtualFunctionTable;
+                public int InstanceID;
+                public BitVector32 bits;
                 // There are more fields but they aren't needed.
             }
         }
