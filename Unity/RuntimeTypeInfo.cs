@@ -1,132 +1,73 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace Unity
 {
-    public unsafe class RuntimeTypeInfo
+    public partial class RuntimeTypeInfo
     {
-        NativeTypeInfoUnion native;
+        IRuntimeTypeInfoImpl TypeInfo;
 
         public ref byte GetPinnableReference()
         {
-            return ref Unsafe.As<NativeTypeInfoUnion, byte>(ref native);
+            return ref TypeInfo.GetPinnableReference();
         }
 
-        public string Name { get; }
+        public string Name => TypeInfo.Name;
 
-        public string Namespace { get; }
+        public string Namespace => TypeInfo.Namespace;
 
-        public string Module { get; }
+        public string Module => TypeInfo.Module;
 
-        public PersistentTypeID PersistentTypeID { get; }
+        public PersistentTypeID PersistentTypeID => TypeInfo.PersistentTypeID;
 
         public RuntimeTypeInfo Base { get; }
 
-        public int Size { get; }
+        public int Size => TypeInfo.Size;
 
-        public uint TypeIndex { get;  }
+        public uint TypeIndex => TypeInfo.TypeIndex;
 
-        public uint DescendantCount { get; }
+        public uint DescendantCount => TypeInfo.DescendantCount;
 
-        public bool IsAbstract { get; }
+        public bool IsAbstract => TypeInfo.IsAbstract;
 
-        public bool IsSealed { get; }
+        public bool IsSealed => TypeInfo.IsSealed;
 
-        public bool IsEditorOnly { get; }
+        public bool IsEditorOnly => TypeInfo.IsEditorOnly;
 
-        public bool IsStripped { get; }
+        public bool IsStripped => TypeInfo.IsStripped;
 
-        public IntPtr Attributes { get; }
+        public IntPtr Attributes => TypeInfo.Attributes;
 
-        public ulong AttributeCount { get; }
+        public ulong AttributeCount => TypeInfo.AttributeCount;
 
 
-        internal RuntimeTypeInfo(NativeTypeInfoV1 native)
+        internal RuntimeTypeInfo(IntPtr ptr, UnityVersion version)
         {
-            this.native = new NativeTypeInfoUnion() { V1 = native };
-            Base = native.Base != null ? new RuntimeTypeInfo(*native.Base) : null;
-            Name = native.ClassName != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassName) : null;
-            Namespace = native.ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassNamespace) : null;
-            PersistentTypeID = native.PersistentTypeID;
-            Size = native.Size;
-            TypeIndex = native.DerivedFromInfo.TypeIndex;
-            DescendantCount = native.DerivedFromInfo.DescendantCount;
-            IsAbstract = native.IsAbstract;
-            IsSealed = native.IsSealed;
-            IsEditorOnly = native.IsEditorOnly;
+            if (version >= UnityVersion.Unity2017_3)
+            {
+                TypeInfo = new V2017_3(ptr, version);
+            } else
+            {
+                TypeInfo = new V1(ptr, version);
+            }
         }
 
-        internal RuntimeTypeInfo(NativeTypeInfoV2 native)
+        interface IRuntimeTypeInfoImpl
         {
-            this.native = new NativeTypeInfoUnion() { V2 = native };
-            Base             = native.Base           != null        ? new RuntimeTypeInfo(*native.Base)              : null;
-            Name             = native.ClassName      != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassName)      : null;
-            Namespace        = native.ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassNamespace) : null;
-            Module           = native.Module         != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.Module)         : null;
-            PersistentTypeID = native.PersistentTypeID;
-            Size = native.Size;
-            TypeIndex = native.DerivedFromInfo.TypeIndex;
-            DescendantCount = native.DerivedFromInfo.DescendantCount;
-            IsAbstract       = native.IsAbstract;
-            IsSealed = native.IsSealed;
-            IsEditorOnly = native.IsEditorOnly;
-            IsStripped = native.IsStripped;
-            Attributes = native.Attributes;
-            AttributeCount = native.AttributeCount;
-        }
-        [StructLayout(LayoutKind.Explicit)]
-        internal struct NativeTypeInfoUnion
-        {
-            [FieldOffset(0)]
-            public NativeTypeInfoV1 V1;
-
-            [FieldOffset(0)]
-            public NativeTypeInfoV2 V2;
-        }
-        internal unsafe struct NativeTypeInfoV1
-        {
-            public NativeTypeInfoV1* Base;
-            public IntPtr Factory;
-            public IntPtr ClassName;
-            public IntPtr ClassNamespace;
-            public PersistentTypeID PersistentTypeID;
-            public int Size;
-            public DerivedFromInfo DerivedFromInfo;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsAbstract;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsSealed;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsEditorOnly;
-        }
-
-        internal unsafe struct NativeTypeInfoV2
-        {
-            public NativeTypeInfoV2* Base;
-            public IntPtr Factory;
-            public IntPtr ClassName;
-            public IntPtr ClassNamespace;
-            public IntPtr Module;
-            public PersistentTypeID PersistentTypeID;
-            public int Size;
-            public DerivedFromInfo DerivedFromInfo;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsAbstract;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsSealed;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsEditorOnly;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsStripped;
-            public IntPtr Attributes;
-            public ulong AttributeCount;
-        }
-
-        internal struct DerivedFromInfo
-        {
-            public uint TypeIndex;
-            public uint DescendantCount;
+            RuntimeTypeInfo Base { get;  }
+            public string Name { get; }
+            public string Namespace { get; }
+            public string Module { get; }
+            public PersistentTypeID PersistentTypeID { get; }
+            public int Size { get; }
+            public uint TypeIndex { get; }
+            public uint DescendantCount { get; }
+            public bool IsAbstract { get; }
+            public bool IsSealed { get; }
+            public bool IsEditorOnly { get; }
+            public bool IsStripped { get; }
+            public IntPtr Attributes { get; }
+            public ulong AttributeCount { get; }
+            ref byte GetPinnableReference();
         }
     }
 }

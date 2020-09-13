@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -19,24 +20,20 @@ namespace Unity
         {
 
             NativeTypeArray* runtimeTypes;
+
             if (version >= UnityVersion.Unity2017_3) 
             {
                 runtimeTypes  = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@0URuntimeTypeArray@1@A");
-                types = new List<RuntimeTypeInfo>(runtimeTypes->Count);
-                for (int i = 0; i < runtimeTypes->Count; i++)
-                {
-                    var info = *(&runtimeTypes->First)[i];
-                    types.Add(new RuntimeTypeInfo(info.V2));
-                }
             } else
             {
                 runtimeTypes = resolver.Resolve<NativeTypeArray>("?ms_runtimeTypes@RTTI@@2URuntimeTypeArray@1@A");
-                types = new List<RuntimeTypeInfo>(runtimeTypes->Count);
-                for (int i = 0; i < runtimeTypes->Count; i++)
-                {
-                    var info = *(&runtimeTypes->First)[i];
-                    types.Add(new RuntimeTypeInfo(info.V1));
-                }
+            }
+
+            types = new List<RuntimeTypeInfo>(runtimeTypes->Count);
+            for (int i = 0; i < runtimeTypes->Count; i++)
+            {
+                var info = (&runtimeTypes->First)[i];
+                types.Add(new RuntimeTypeInfo(info, version));
             }
 
         }
@@ -54,7 +51,7 @@ namespace Unity
         unsafe struct NativeTypeArray
         {
             public int Count;
-            public RuntimeTypeInfo.NativeTypeInfoUnion* First;
+            public IntPtr First;
         }
     }
 }
