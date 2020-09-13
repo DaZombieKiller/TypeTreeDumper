@@ -40,17 +40,6 @@ namespace Unity
 
         public unsafe TypeTree GetTypeTree(NativeObject @object, TransferInstructionFlags flags)
         {
-            if (HasGetTypeTree)
-            {
-                if (getTypeTree == null)
-                    throw new NotSupportedException();
-            }
-            else
-            {
-                if (generateTypeTree == null)
-                    throw new NotSupportedException();
-            }
-
             var tree = new TypeTree(version, strings, resolver);
 
             fixed (byte* pointer = tree)
