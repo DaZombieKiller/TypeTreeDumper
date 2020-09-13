@@ -1,22 +1,15 @@
 ﻿using System;
-using System.IO;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Management;
 using System.Runtime.Remoting;
 using EasyHook;
-using System.Runtime.InteropServices;
 
 namespace TypeTreeDumper
 {
     class Program
     {
-        static Process UnityProcess;
-
-        [DllImport("kernel32")]
-        static extern bool SetConsoleCtrlHandler(ConsoleCtrlHandler handler, bool add);
-
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-        delegate bool ConsoleCtrlHandler(CtrlType sig);
-
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -24,42 +17,46 @@ namespace TypeTreeDumper
 
             var project    = Path.GetFullPath("DummyProject");
             var command    = Directory.Exists(project) ? "projectPath" : "createProject";
+            var processes = Process.GetProcessesByName("unity");
+            foreach(var proc in processes)
+            {
+                var procArgs = GetCommandLine(proc);
+                if (procArgs.Contains(project))
+                {
+                    Console.WriteLine("Killing zombie process");
+                    proc.Kill();
+                }
+                Console.WriteLine(procArgs);
+            }
             string channel = null;
             var server     = new IpcInterface();
             RemoteHooking.IpcCreateServer(ref channel, WellKnownObjectMode.Singleton, server);
             RemoteHooking.CreateAndInject(
                 args[0],
-                $"-logfile - -nographics -batchmode -{command} \"{project}\"",
+                $"-nographics -batchmode -{command} \"{project}\" -logFile \"{Directory.GetCurrentDirectory()}\\Log.txt\"",
                 0,
                 InjectionOptions.DoNotRequireStrongName,
                 typeof(EntryPoint).Assembly.Location,
                 typeof(EntryPoint).Assembly.Location,
-                out int processId,
+                out int processID,
                 channel
             );
-            
-            UnityProcess = Process.GetProcessById(processId);
-            SetConsoleCtrlHandler(OnConsoleCtrl, add: true);
+            var process = Process.GetProcessById(processID);
             Console.ReadKey();
-            OnConsoleCtrl(CtrlType.CloseEvent);
+            if (!process.HasExited)
+            {
+                Console.WriteLine("Zombie process still alive. Killing process");
+                process.Kill();
+            }
+
         }
-
-        static bool OnConsoleCtrl(CtrlType sig)
+        private static string GetCommandLine(Process process)
         {
-            if (!UnityProcess.HasExited)
-                UnityProcess.Kill();
-
-            Environment.Exit(0);
-            return true;
-        }
-
-        enum CtrlType
-        {
-            CEvent,
-            BreakEvent,
-            CloseEvent,
-            LogoffEvent,
-            ShutdownEvent
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("SELECT CommandLine FROM Win32_Process WHERE ProcessId = " + process.Id))
+            using (ManagementObjectCollection objects = searcher.Get())
+            {
+                return objects.Cast<ManagementBaseObject>().SingleOrDefault()?["CommandLine"]?.ToString();
+            }
         }
     }
 }

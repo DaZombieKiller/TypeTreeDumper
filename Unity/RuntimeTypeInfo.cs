@@ -1,49 +1,73 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 
 namespace Unity
 {
-    public class RuntimeTypeInfo
+    public partial class RuntimeTypeInfo
     {
-        public string Name { get; }
+        IRuntimeTypeInfoImpl TypeInfo;
 
-        public string Namespace { get; }
-
-        public string Module { get; }
-
-        internal RuntimeTypeInfo(NativeTypeInfo native)
+        public ref byte GetPinnableReference()
         {
-            Name      = native.ClassName      != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassName)      : null;
-            Namespace = native.ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.ClassNamespace) : null;
-            Module    = native.Module         != IntPtr.Zero ? Marshal.PtrToStringAnsi(native.Module)         : null;
+            return ref TypeInfo.GetPinnableReference();
         }
 
-        internal unsafe struct NativeTypeInfo
+        public string Name => TypeInfo.Name;
+
+        public string Namespace => TypeInfo.Namespace;
+
+        public string Module => TypeInfo.Module;
+
+        public PersistentTypeID PersistentTypeID => TypeInfo.PersistentTypeID;
+
+        public RuntimeTypeInfo Base { get; }
+
+        public int Size => TypeInfo.Size;
+
+        public uint TypeIndex => TypeInfo.TypeIndex;
+
+        public uint DescendantCount => TypeInfo.DescendantCount;
+
+        public bool IsAbstract => TypeInfo.IsAbstract;
+
+        public bool IsSealed => TypeInfo.IsSealed;
+
+        public bool IsEditorOnly => TypeInfo.IsEditorOnly;
+
+        public bool IsStripped => TypeInfo.IsStripped;
+
+        public IntPtr Attributes => TypeInfo.Attributes;
+
+        public ulong AttributeCount => TypeInfo.AttributeCount;
+
+
+        internal RuntimeTypeInfo(IntPtr ptr, UnityVersion version)
         {
-            public NativeTypeInfo* Base;
-            public IntPtr Factory;
-            public IntPtr ClassName;
-            public IntPtr ClassNamespace;
-            public IntPtr Module;
-            public int PersistentTypeID;
-            public int Size;
-            public DerivedFromInfo DerivedFromInfo;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsAbstract;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsSealed;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsEditorOnly;
-            [MarshalAs(UnmanagedType.U1)]
-            public bool IsStripped;
-            public IntPtr Attributes;
-            public ulong AttributeCount;
+            if (version >= UnityVersion.Unity2017_3)
+            {
+                TypeInfo = new V2017_3(ptr, version);
+            } else
+            {
+                TypeInfo = new V1(ptr, version);
+            }
         }
 
-        internal struct DerivedFromInfo
+        interface IRuntimeTypeInfoImpl
         {
-            public uint TypeIndex;
-            public uint DescendantCount;
+            RuntimeTypeInfo Base { get;  }
+            public string Name { get; }
+            public string Namespace { get; }
+            public string Module { get; }
+            public PersistentTypeID PersistentTypeID { get; }
+            public int Size { get; }
+            public uint TypeIndex { get; }
+            public uint DescendantCount { get; }
+            public bool IsAbstract { get; }
+            public bool IsSealed { get; }
+            public bool IsEditorOnly { get; }
+            public bool IsStripped { get; }
+            public IntPtr Attributes { get; }
+            public ulong AttributeCount { get; }
+            ref byte GetPinnableReference();
         }
     }
 }

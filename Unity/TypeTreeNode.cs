@@ -8,7 +8,26 @@ namespace Unity
 
         readonly ITypeTreeNodeImpl node;
 
+
+        public short Version => node.Version;
+
+        public byte Level => node.Level;
+
+        public TypeFlags TypeFlags => node.TypeFlags;
+
+        public uint TypeStrOffset => node.TypeStrOffset;
+
+        public uint NameStrOffset => node.NameStrOffset;
+
+        public string TypeName => owner.GetString(node.TypeStrOffset);
+
         public string Name => owner.GetString(node.NameStrOffset);
+
+        public int ByteSize => node.ByteSize;
+
+        public int Index => node.Index;
+
+        public TransferMetaFlags MetaFlag => node.MetaFlag;
 
         internal TypeTreeNode(ITypeTreeNodeImpl impl, TypeTree owner)
         {
@@ -28,7 +47,14 @@ namespace Unity
 
         internal interface ITypeTreeNodeImpl
         {
-            uint NameStrOffset { get; }
+            public short Version { get; }
+            public byte Level { get; }
+            public TypeFlags TypeFlags { get; }
+            public uint TypeStrOffset { get; }
+            public uint NameStrOffset { get; }
+            public int ByteSize { get; }
+            public int Index { get; }
+            public TransferMetaFlags MetaFlag { get;  }
             ref byte GetPinnableReference();
         }
     }

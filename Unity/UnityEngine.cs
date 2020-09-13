@@ -7,16 +7,20 @@
 
         public CommonString CommonString { get; }
 
-        public TypeTreeCache TypeTreeCache { get; }
+        public TypeTreeFactory TypeTreeFactory { get; }
 
         public RuntimeTypeArray RuntimeTypes { get; }
+
+        public NativeObjectFactory ObjectFactory { get; }
+
 
         public UnityEngine(UnityVersion version, SymbolResolver resolver)
         {
             Version       = version;
             CommonString  = new CommonString(resolver);
-            TypeTreeCache = new TypeTreeCache(version, CommonString, resolver);
-            RuntimeTypes  = new RuntimeTypeArray(resolver);
+            TypeTreeFactory = new TypeTreeFactory(version, CommonString, resolver);
+            RuntimeTypes  = new RuntimeTypeArray(version, resolver);
+            ObjectFactory = new NativeObjectFactory(version, resolver);
         }
     }
 }
