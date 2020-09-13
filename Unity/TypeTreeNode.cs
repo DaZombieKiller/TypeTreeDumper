@@ -40,7 +40,7 @@ namespace Unity
             this.owner = owner;
 
             if (version >= UnityVersion.Unity2019_1)
-                node = new V2(address);
+                node = new V2019_1(address);
             else
                 node = new V1(address);
         }
