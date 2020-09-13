@@ -10,6 +10,7 @@ namespace Unity
 
         readonly ITypeTreeImpl tree;
 
+        private byte[] m_StringBuffer;
 
         public TypeTree(UnityVersion version, CommonString strings, SymbolResolver resolver)
         {
@@ -39,16 +40,16 @@ namespace Unity
         public void CreateNodes()
         {
             tree.CreateNodes(this);
-            StringBuffer = new byte[tree.StringBuffer.Size];
-            fixed (byte* destination = StringBuffer)
-                Buffer.MemoryCopy(tree.StringBuffer.Ptr, destination, StringBuffer.Length, StringBuffer.Length);
+            m_StringBuffer = new byte[tree.StringBuffer.Size];
+            fixed (byte* destination = m_StringBuffer)
+                Buffer.MemoryCopy(tree.StringBuffer.Ptr, destination, m_StringBuffer.Length, m_StringBuffer.Length);
         }
 
         public TypeTreeNode this[int index] => tree.Nodes[index];
 
         public int Count => tree.Nodes.Count;
 
-        public byte[] StringBuffer;
+        public IReadOnlyList<byte> StringBuffer => m_StringBuffer;
 
         interface ITypeTreeImpl
         {

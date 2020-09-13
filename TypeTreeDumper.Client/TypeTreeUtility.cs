@@ -9,7 +9,7 @@ namespace TypeTreeDumper
         internal static void CreateBinaryDump(TypeTree tree, BinaryWriter writer)
         {
             writer.Write(tree.Count);
-            writer.Write(tree.StringBuffer.Length);
+            writer.Write(tree.StringBuffer.Count);
             for (int i = 0, n = tree.Count; i < n; i++)
             {
                 var node = tree[i];
@@ -22,7 +22,7 @@ namespace TypeTreeDumper
                 writer.Write(node.Index);
                 writer.Write((int)node.MetaFlag);
             }
-            for (int i = 0, n = tree.StringBuffer.Length; i < n; i++)
+            for (int i = 0, n = tree.StringBuffer.Count; i < n; i++)
                 writer.Write(tree.StringBuffer[i]);
         }
 
