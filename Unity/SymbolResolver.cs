@@ -32,6 +32,11 @@ namespace Unity
             where T : Delegate
         {
             var address = GetAddressOrZero(name);
+            if (address == IntPtr.Zero)
+            {
+                del = null;
+                return false;
+            }
             del = Marshal.GetDelegateForFunctionPointer<T>(address);
             return del != null;
         }
