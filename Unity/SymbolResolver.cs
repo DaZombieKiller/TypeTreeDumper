@@ -33,17 +33,12 @@ namespace Unity
             return address != null;
         }
 
-        public unsafe bool TryResolveFunction<T>(string name, out T del)
+        public bool TryResolveFunction<T>(string name, out T function)
             where T : Delegate
         {
             var address = GetAddressOrZero(name);
-            if (address == IntPtr.Zero)
-            {
-                del = null;
-                return false;
-            }
-            del = Marshal.GetDelegateForFunctionPointer<T>(address);
-            return del != null;
+            function    = address != IntPtr.Zero ? Marshal.GetDelegateForFunctionPointer<T>(address) : null;
+            return function != null;
         }
 
         public T ResolveFunction<T>(string name)
