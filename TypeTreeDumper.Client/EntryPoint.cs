@@ -34,8 +34,8 @@ namespace TypeTreeDumper
             server   = RemoteHooking.IpcConnectClient<IpcInterface>(channelName);
             resolver = new DiaSymbolResolver(module);
             Console.SetIn(server.In);
-            Console.SetOut(server.Out);
-            Console.SetError(server.Error);
+            Console.SetOut(new TextWriterWrapper(server.Out));
+            Console.SetError(new TextWriterWrapper(server.Error));
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
