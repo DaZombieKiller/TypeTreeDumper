@@ -26,12 +26,6 @@ namespace TypeTreeDumper
         static UnityVersionDelegate ParseUnityVersion;
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.U1)]
-        delegate bool IsMainThreadDelegate();
-
-        static IsMainThreadDelegate IsMainThread;
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate IntPtr GetUnityVersionDelegate();
 
         static GetUnityVersionDelegate GetUnityVersion;
@@ -65,7 +59,7 @@ namespace TypeTreeDumper
                         Thread.Sleep(500);
                     }
 
-                    server.WriteLine($"Engine loaded. IsMainThread {IsMainThread()}");
+                    server.WriteLine($"Engine loaded.");
                 }
             }
             catch(Exception ex)
@@ -116,19 +110,7 @@ namespace TypeTreeDumper
                 }
 
                 ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(GetUnityVersion()));
-                server.WriteLine($"UnityVersion {version}");
-                if (version >= UnityVersion.Unity2018_1)
-                {
-                    IsMainThread = resolver.ResolveFunction<IsMainThreadDelegate>("?CurrentThreadIsMainThread@@YA_NXZ");
-                }
-                else if (version >= UnityVersion.Unity2018_4)
-                {
-                    IsMainThread = resolver.ResolveFunction<IsMainThreadDelegate>("?IsMainThread@CurrentThread@@YA_NXZ");
-                }  else
-                {
-                    IsMainThread = () => false;
-                }
-                server.WriteLine($"Starting export. IsMainThread {IsMainThread()}");
+                server.WriteLine($"Starting export. UnityVersion {version}");
                 var engine = new UnityEngine(version, resolver);
                 ExportStringData(engine);
                 ExportClassesJson(engine);
