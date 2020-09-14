@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using EasyHook;
+using Unity;
 
 namespace TypeTreeDumper
 {
@@ -19,6 +20,12 @@ namespace TypeTreeDumper
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void UnityVersionDelegate(out UnityVersion version, [MarshalAs(UnmanagedType.LPStr)] string value);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate IntPtr GetUnityVersionDelegate();
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public EntryPoint(RemoteHooking.IContext context, string channelName)
@@ -37,7 +44,7 @@ namespace TypeTreeDumper
             var address    = resolver.Resolve("?AfterEverythingLoaded@Application@@QEAAXXZ");
             using var hook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
             hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
-            OnEngineInitialized += () => Dumper.Execute(resolver, server.OutputDirectory);
+            OnEngineInitialized += ExecuteDumper;
             RemoteHooking.WakeUpProcess();
 
             while (true)
@@ -45,6 +52,14 @@ namespace TypeTreeDumper
                 server.Ping();
                 Thread.Sleep(500);
             }
+        }
+
+        void ExecuteDumper()
+        {
+            var GetUnityVersion   = resolver.ResolveFunction<GetUnityVersionDelegate>("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ");
+            var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
+            ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(GetUnityVersion()));
+            Dumper.Execute(new UnityEngine(version, resolver), server.OutputDirectory);
         }
 
         void AfterEverythingLoaded(IntPtr app)

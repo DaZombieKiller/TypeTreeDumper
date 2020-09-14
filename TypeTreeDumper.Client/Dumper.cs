@@ -2,7 +2,6 @@
 using System.IO;
 using System.Text;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Unity;
 
 namespace TypeTreeDumper
@@ -11,19 +10,11 @@ namespace TypeTreeDumper
     {
         static string OutputDirectory;
 
-        static UnityVersionDelegate ParseUnityVersion;
-
-        static GetUnityVersionDelegate GetUnityVersion;
-
-        public static void Execute(DiaSymbolResolver resolver, string outputDirectory)
+        public static void Execute(UnityEngine engine, string outputDirectory)
         {
-            OutputDirectory   = outputDirectory;
-            GetUnityVersion   = resolver.ResolveFunction<GetUnityVersionDelegate>("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ");
-            ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
-            ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(GetUnityVersion()));
-            Console.WriteLine($"Starting export. UnityVersion {version}.");
+            OutputDirectory = outputDirectory;
+            Console.WriteLine($"Starting export. UnityVersion {engine.Version}.");
             Directory.CreateDirectory(OutputDirectory);
-            var engine = new UnityEngine(version, resolver);
             ExportStringData(engine.CommonString);
             ExportClassesJson(engine.RuntimeTypes);
             ExportRTTI(engine.RuntimeTypes);
@@ -215,11 +206,5 @@ namespace TypeTreeDumper
                 TypeTreeUtility.CreateTextDump(tree, tw);
             }
         }
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void UnityVersionDelegate(out UnityVersion version, [MarshalAs(UnmanagedType.LPStr)] string value);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetUnityVersionDelegate();
     }
 }
