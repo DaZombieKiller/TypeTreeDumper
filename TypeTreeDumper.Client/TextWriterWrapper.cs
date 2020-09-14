@@ -48,15 +48,15 @@ namespace TypeTreeDumper
 
         public override void Write(string value) => BaseWriter.Write(value);
 
-        public override void Write(object value) => BaseWriter.Write(value?.ToString());
+        public override void Write(object value) => BaseWriter.Write(string.Format(FormatProvider, "{0}", value));
 
-        public override void Write(string format, object arg0) => BaseWriter.Write(string.Format(format, arg0));
+        public override void Write(string format, object arg0) => BaseWriter.Write(string.Format(FormatProvider, format, arg0));
 
-        public override void Write(string format, object arg0, object arg1) => BaseWriter.Write(string.Format(format, arg0, arg1));
+        public override void Write(string format, object arg0, object arg1) => BaseWriter.Write(string.Format(FormatProvider, format, arg0, arg1));
 
-        public override void Write(string format, object arg0, object arg1, object arg2) => BaseWriter.Write(string.Format(format, arg0, arg1, arg2));
+        public override void Write(string format, object arg0, object arg1, object arg2) => BaseWriter.Write(string.Format(FormatProvider, format, arg0, arg1, arg2));
 
-        public override void Write(string format, params object[] arg) => BaseWriter.Write(string.Format(format, arg));
+        public override void Write(string format, params object[] arg) => BaseWriter.Write(string.Format(FormatProvider, format, arg));
 
         public override void WriteLine() => BaseWriter.WriteLine();
 
@@ -84,15 +84,15 @@ namespace TypeTreeDumper
 
         public override void WriteLine(string value) => BaseWriter.WriteLine(value);
 
-        public override void WriteLine(object value) => BaseWriter.WriteLine(value?.ToString());
+        public override void WriteLine(object value) => BaseWriter.WriteLine(string.Format(FormatProvider, "{0}", value));
 
-        public override void WriteLine(string format, object arg0) => BaseWriter.WriteLine(string.Format(format, arg0));
+        public override void WriteLine(string format, object arg0) => BaseWriter.WriteLine(string.Format(FormatProvider, format, arg0));
 
-        public override void WriteLine(string format, object arg0, object arg1) => BaseWriter.WriteLine(string.Format(format, arg0, arg1));
+        public override void WriteLine(string format, object arg0, object arg1) => BaseWriter.WriteLine(string.Format(FormatProvider, format, arg0, arg1));
 
-        public override void WriteLine(string format, object arg0, object arg1, object arg2) => BaseWriter.WriteLine(string.Format(format, arg0, arg1, arg2));
+        public override void WriteLine(string format, object arg0, object arg1, object arg2) => BaseWriter.WriteLine(string.Format(FormatProvider, format, arg0, arg1, arg2));
 
-        public override void WriteLine(string format, params object[] arg) => BaseWriter.WriteLine(string.Format(format, arg));
+        public override void WriteLine(string format, params object[] arg) => BaseWriter.WriteLine(string.Format(FormatProvider, format, arg));
 
         public override void Flush() => BaseWriter.Flush();
 
