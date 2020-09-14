@@ -41,8 +41,8 @@ namespace TypeTreeDumper
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public void Run(RemoteHooking.IContext context, string channelName)
         {
-            var address    = resolver.Resolve("?AfterEverythingLoaded@Application@@QEAAXXZ");
-            using var hook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
+            var address = resolver.Resolve("?AfterEverythingLoaded@Application@@QEAAXXZ");
+            var hook    = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
             hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
             OnEngineInitialized += ExecuteDumper;
             RemoteHooking.WakeUpProcess();
