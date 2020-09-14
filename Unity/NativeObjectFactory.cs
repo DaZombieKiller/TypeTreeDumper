@@ -3,10 +3,12 @@ using System.Runtime.InteropServices;
 
 namespace Unity
 {
-    public class NativeObjectFactory
+    public unsafe class NativeObjectFactory
     {
         UnityVersion version;
         SymbolResolver resolver;
+
+        MemLabelId* kMemBaseObject;
 
         readonly GetSpriteAtlasDatabaseDelegate s_GetSpriteAtlasDatabase;
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -79,6 +81,7 @@ namespace Unity
                 s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>("?EditorUtility_CUSTOM_InstanceIDToObject@@YAPEAUMonoObject@@H@Z");
                 s_DestroyImmediate = resolver.ResolveFunction<DestroyImmediateDelegate>("?Object_CUSTOM_DestroyImmediate@@YAXPEAUMonoObject@@E@Z");
             }
+            kMemBaseObject = resolver.Resolve<MemLabelId>("?kMemBaseObject@@3UMemLabelId@@A");
         }
 
         public NativeObject GetSpriteAtlasDatabase()
@@ -124,10 +127,10 @@ namespace Unity
             IntPtr ptr;
             if (IsObjectProduceV1)
             {
-                ptr = s_ProduceV1(ref type.GetPinnableReference(), instanceID, new MemLabelId(), creationMode);
+                ptr = s_ProduceV1(ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
             } else
             {
-                ptr = s_ProduceV2(ref type.GetPinnableReference(), ref type.GetPinnableReference(), instanceID, new MemLabelId(), creationMode);
+                ptr = s_ProduceV2(ref type.GetPinnableReference(), ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
             }
             if (ptr.ToInt64() == 0) return null;
             return new NativeObject(ptr, this, type.PersistentTypeID);
