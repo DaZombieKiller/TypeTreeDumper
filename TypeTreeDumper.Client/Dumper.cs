@@ -75,7 +75,7 @@ namespace TypeTreeDumper
             tw.WriteLine("{");
 
             var entries = from type in runtimeTypes select $"  \"{type.PersistentTypeID}\": \"{type.Name}\"";
-            var json    = string.Join(",\n", entries);
+            var json    = string.Join(',' + tw.NewLine, entries);
 
             tw.WriteLine(json);
             tw.WriteLine("}");
