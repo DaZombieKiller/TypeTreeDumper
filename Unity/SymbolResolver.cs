@@ -66,7 +66,7 @@ namespace Unity
             if (string.IsNullOrEmpty(name))
                 throw new UnresolvedSymbolException(regex.ToString());
 
-            return Resolve(name);
+            return GetAddressOrZero(name);
         }
 
         public unsafe T* ResolveFirstMatching<T>(Regex regex)
