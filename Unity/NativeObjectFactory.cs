@@ -132,7 +132,7 @@ namespace Unity
             {
                 ptr = s_ProduceV2(ref type.GetPinnableReference(), ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
             }
-            if (ptr.ToInt64() == 0) return null;
+            if (ptr == IntPtr.Zero) return null;
             return new NativeObject(ptr, this, type.PersistentTypeID);
         }
 
