@@ -27,6 +27,15 @@ namespace TypeTreeDumper
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate IntPtr GetUnityVersionDelegate();
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate IntPtr MonoStringToUTF8Delegate(IntPtr monoString);
+
+        [DllImport("kernel32")]
+        public static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
+
+        [DllImport("kernel32")]
+        public static extern IntPtr GetModuleHandle(string moduleName);
+
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public EntryPoint(RemoteHooking.IContext context, string channelName)
         {
@@ -54,11 +63,32 @@ namespace TypeTreeDumper
             }
         }
 
+        IntPtr GetMonoHandle()
+        {
+            foreach(ProcessModule module in Process.GetCurrentProcess().Modules)
+            {
+                if (module.ModuleName.StartsWith("mono"))
+                {
+                    return GetModuleHandle(module.ModuleName);
+                }
+            }
+            throw new Exception("Could not find mono library");
+        }
+
         void ExecuteDumper()
         {
-            var GetUnityVersion   = resolver.ResolveFunction<GetUnityVersionDelegate>("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ");
+            GetUnityVersionDelegate GetUnityVersion;
+            if (!(resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ", out GetUnityVersion) ||
+                    resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ", out GetUnityVersion) ||
+                    resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPEAVScriptingBackendNativeStringPtrOpaque@@XZ", out GetUnityVersion)))
+            {
+                throw new UnresolvedSymbolException(nameof(GetUnityVersion));
+            }
+            var mono = GetMonoHandle();
+            var address = GetProcAddress(mono, "mono_string_to_utf8");
+            var MonoStringToUTF8 = Marshal.GetDelegateForFunctionPointer<MonoStringToUTF8Delegate>(address);
             var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
-            ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(GetUnityVersion()));
+            ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             Dumper.Execute(new UnityEngine(version, resolver), server.OutputDirectory);
         }
 
