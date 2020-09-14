@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace Unity
 {
     public abstract class SymbolResolver
     {
         protected abstract IntPtr GetAddressOrZero(string name);
+
+        public abstract IEnumerable<string> FindSymbolsMatching(Regex expression);
 
         public IntPtr Resolve(string name)
         {
@@ -57,6 +62,28 @@ namespace Unity
                 return address;
 
             throw new UnresolvedSymbolException(name);
+        }
+
+        public IntPtr ResolveFirstMatching(Regex regex)
+        {
+            var name = FindSymbolsMatching(regex).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(name))
+                throw new UnresolvedSymbolException(regex.ToString());
+
+            return Resolve(name);
+        }
+
+        public unsafe T* ResolveFirstMatching<T>(Regex regex)
+            where T : unmanaged
+        {
+            return (T*)ResolveFirstMatching(regex);
+        }
+
+        public T ResolveFirstFunctionMatching<T>(Regex regex)
+            where T : Delegate
+        {
+            return Marshal.GetDelegateForFunctionPointer<T>(ResolveFirstMatching(regex));
         }
     }
 }

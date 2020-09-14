@@ -1,12 +1,25 @@
 ﻿using System;
 using System.Threading;
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 using Dia2Lib;
 using Unity;
 
 namespace TypeTreeDumper
 {
+    [Flags]
+    public enum NameSearchOptions : uint
+    {
+        None,
+        CaseSensitive     = 1 << 0,
+        CaseInsensitive   = 1 << 1,
+        FileNameExtension = 1 << 2,
+        RegularExpression = 1 << 3,
+        UndecoratedName   = 1 << 4,
+    }
+
     public class DiaSymbolResolver : SymbolResolver
     {
         readonly ThreadLocal<IDiaSession> session;
@@ -20,6 +33,19 @@ namespace TypeTreeDumper
             session      = new ThreadLocal<IDiaSession>(CreateSession);
             this.module  = module;
             cache        = new ConcurrentDictionary<string, IntPtr>();
+        }
+
+        public override IEnumerable<string> FindSymbolsMatching(Regex expression)
+        {
+            session.Value.globalScope.findChildren(
+                SymTagEnum.SymTagPublicSymbol,
+                expression.ToString(),
+                (uint)NameSearchOptions.RegularExpression,
+                out IDiaEnumSymbols symbols
+            );
+
+            foreach (IDiaSymbol symbol in symbols)
+                yield return symbol.name;
         }
 
         protected override IntPtr GetAddressOrZero(string name)
