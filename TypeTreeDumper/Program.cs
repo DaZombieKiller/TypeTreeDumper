@@ -22,8 +22,12 @@ namespace TypeTreeDumper
             
             foreach (var process in Process.GetProcessesByName("Unity"))
             {
-                if (GetProcessPath(process).Equals(args[0], StringComparison.OrdinalIgnoreCase) &&
-                    GetProcessCommandLine(process).Contains($"-{command} \"{project}\""))
+                using var mo       = GetManagementObjectForProcess(process);
+                var executablePath = mo.GetPropertyValue("ExecutablePath") as string ?? string.Empty;
+                var commandLine    = mo.GetPropertyValue("CommandLine")    as string ?? string.Empty;
+
+                if (executablePath.Equals(args[0], StringComparison.OrdinalIgnoreCase) &&
+                    commandLine.Contains($"-{command} \"{project}\""))
                 {
                     Console.WriteLine("Terminating orphaned editor process {0}...", process.Id);
                     process.Kill();
@@ -49,21 +53,10 @@ namespace TypeTreeDumper
 
         static ManagementBaseObject GetManagementObjectForProcess(Process process)
         {
-            var query          = $"select * from Win32_Process where ProcessId = {process.Id}";
-            using var searcher = new ManagementObjectSearcher(query);
-            return searcher.Get().OfType<ManagementBaseObject>().FirstOrDefault();
-        }
-
-        static string GetProcessCommandLine(Process process)
-        {
-            using var handle = GetManagementObjectForProcess(process);
-            return handle?.Properties["CommandLine"]?.Value?.ToString() ?? string.Empty;
-        }
-
-        static string GetProcessPath(Process process)
-        {
-            using var handle = GetManagementObjectForProcess(process);
-            return handle?.Properties["ExecutablePath"]?.Value?.ToString() ?? string.Empty;
+            var query           = $"select * from Win32_Process where ProcessId = {process.Id}";
+            using var searcher  = new ManagementObjectSearcher(query);
+            using var processes = searcher.Get();
+            return processes.OfType<ManagementBaseObject>().FirstOrDefault();
         }
     }
 }
