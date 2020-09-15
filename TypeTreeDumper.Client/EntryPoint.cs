@@ -78,17 +78,23 @@ namespace TypeTreeDumper
         void ExecuteDumper()
         {
             GetUnityVersionDelegate GetUnityVersion;
-            if (!(resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ", out GetUnityVersion) ||
-                    resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ", out GetUnityVersion) ||
-                    resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPEAVScriptingBackendNativeStringPtrOpaque@@XZ", out GetUnityVersion)))
+            UnityVersion version;
+            if (resolver.TryResolveFunction("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ", out GetUnityVersion))
+            {
+                var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
+                ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
+            }
+            else if (resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ", out GetUnityVersion) ||
+                    resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ", out GetUnityVersion))
+            {
+                var mono = GetMonoHandle();
+                var address = GetProcAddress(mono, "mono_string_to_utf8");
+                var MonoStringToUTF8 = Marshal.GetDelegateForFunctionPointer<MonoStringToUTF8Delegate>(address);
+                version = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
+            } else
             {
                 throw new UnresolvedSymbolException(nameof(GetUnityVersion));
             }
-            var mono = GetMonoHandle();
-            var address = GetProcAddress(mono, "mono_string_to_utf8");
-            var MonoStringToUTF8 = Marshal.GetDelegateForFunctionPointer<MonoStringToUTF8Delegate>(address);
-            var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
-            ParseUnityVersion(out UnityVersion version, Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             Dumper.Execute(new UnityEngine(version, resolver), server.OutputDirectory);
         }
 

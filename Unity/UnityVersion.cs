@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 
 namespace Unity
 {
@@ -73,6 +74,20 @@ namespace Unity
             Patch = patch;
             Type  = type;
             Build = build;
+        }
+
+        public UnityVersion(string version)
+        {
+            var match = Regex.Match(version, @"(\d+)\.(\d+)\.(\d+)([abfpx])(\d+)");
+            if (!match.Success)
+            {
+                throw new ArgumentException($"Invalid version: {version}");
+            }
+            Major = int.Parse(match.Groups[1].Value);
+            Minor = int.Parse(match.Groups[2].Value);
+            Patch = int.Parse(match.Groups[3].Value);
+            Type = VersionTypeFromChar(match.Groups[4].Value[0]);
+            Build = int.Parse(match.Groups[5].Value);
         }
 
         public int CompareTo(UnityVersion other)
