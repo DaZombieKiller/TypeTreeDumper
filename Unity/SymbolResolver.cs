@@ -41,6 +41,18 @@ namespace Unity
             return function != null;
         }
 
+        public T ResolveFunction<T>(params string[] names)
+            where T : Delegate
+        {
+            foreach (string name in names)
+            {
+                if (TryResolveFunction(name, out T function))
+                    return function;
+            }
+
+            throw new UnresolvedSymbolException(string.Join(", ", names));
+        }
+
         public T ResolveFunction<T>(string name)
             where T : Delegate
         {

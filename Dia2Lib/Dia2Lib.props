@@ -5,6 +5,7 @@
 
     <ItemGroup>
         <Reference Include="Dia2Lib" HintPath="$(MSBuildThisFileDirectory)Dia2Lib.dll" />
-        <Content Include="$(DiaSdkDir)\bin\amd64\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+        <Content Include="$(DiaSdkDir)\bin\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+        <Content Include="$(DiaSdkDir)\bin\amd64\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="%(Filename)_amd64%(Extension)" />
     </ItemGroup>
 </Project>

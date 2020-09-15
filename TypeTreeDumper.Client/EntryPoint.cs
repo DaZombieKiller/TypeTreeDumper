@@ -30,71 +30,85 @@ namespace TypeTreeDumper
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate IntPtr MonoStringToUTF8Delegate(IntPtr monoString);
 
-        [DllImport("kernel32")]
-        public static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
-
-        [DllImport("kernel32")]
-        public static extern IntPtr GetModuleHandle(string moduleName);
-
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public EntryPoint(RemoteHooking.IContext context, string channelName)
         {
-            module   = Process.GetCurrentProcess().MainModule;
-            server   = RemoteHooking.IpcConnectClient<IpcInterface>(channelName);
-            resolver = new DiaSymbolResolver(module);
+            server = RemoteHooking.IpcConnectClient<IpcInterface>(channelName);
             Console.SetIn(server.In);
             Console.SetOut(new TextWriterWrapper(server.Out));
             Console.SetError(new TextWriterWrapper(server.Error));
+
+            try
+            {
+                module   = Process.GetCurrentProcess().MainModule;
+                resolver = new DiaSymbolResolver(module);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                throw;
+            }
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public void Run(RemoteHooking.IContext context, string channelName)
         {
-            var address = resolver.Resolve("?AfterEverythingLoaded@Application@@QEAAXXZ");
-            var hook    = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
-            hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
-            OnEngineInitialized += ExecuteDumper;
-            RemoteHooking.WakeUpProcess();
-
-            while (true)
+            try
             {
-                server.Ping();
-                Thread.Sleep(500);
+                var address = resolver.Resolve("?AfterEverythingLoaded@Application@@QEAAXXZ");
+                var hook    = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
+                hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                OnEngineInitialized += ExecuteDumper;
+                RemoteHooking.WakeUpProcess();
+
+                while (true)
+                {
+                    server.Ping();
+                    Thread.Sleep(500);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex);
+                throw;
             }
         }
 
         IntPtr GetMonoHandle()
         {
-            foreach(ProcessModule module in Process.GetCurrentProcess().Modules)
+            foreach (ProcessModule module in Process.GetCurrentProcess().Modules)
             {
                 if (module.ModuleName.StartsWith("mono"))
                 {
-                    return GetModuleHandle(module.ModuleName);
+                    return Kernel32.GetModuleHandle(module.ModuleName);
                 }
             }
+
             throw new Exception("Could not find mono library");
         }
 
         void ExecuteDumper()
         {
-            GetUnityVersionDelegate GetUnityVersion;
             UnityVersion version;
+            GetUnityVersionDelegate GetUnityVersion;
+
             if (resolver.TryResolveFunction("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ", out GetUnityVersion))
             {
                 var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
                 ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
             }
-            else if (resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ", out GetUnityVersion) ||
-                    resolver.TryResolveFunction("?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ", out GetUnityVersion))
+            else
             {
-                var mono = GetMonoHandle();
-                var address = GetProcAddress(mono, "mono_string_to_utf8");
-                var MonoStringToUTF8 = Marshal.GetDelegateForFunctionPointer<MonoStringToUTF8Delegate>(address);
-                version = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
-            } else
-            {
-                throw new UnresolvedSymbolException(nameof(GetUnityVersion));
+                GetUnityVersion = resolver.ResolveFunction<GetUnityVersionDelegate>(
+                    "?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ",
+                    "?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ"
+                );
+
+                var mono             = GetMonoHandle();
+                var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
+                version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }
+
             Dumper.Execute(new UnityEngine(version, resolver), server.OutputDirectory);
         }
 

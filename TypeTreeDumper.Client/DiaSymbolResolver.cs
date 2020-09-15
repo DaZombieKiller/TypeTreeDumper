@@ -9,17 +9,6 @@ using Unity;
 
 namespace TypeTreeDumper
 {
-    [Flags]
-    public enum NameSearchOptions : uint
-    {
-        None,
-        CaseSensitive     = 1 << 0,
-        CaseInsensitive   = 1 << 1,
-        FileNameExtension = 1 << 2,
-        RegularExpression = 1 << 3,
-        UndecoratedName   = 1 << 4,
-    }
-
     public class DiaSymbolResolver : SymbolResolver
     {
         readonly ThreadLocal<IDiaSession> session;
@@ -71,7 +60,7 @@ namespace TypeTreeDumper
 
         IDiaSession CreateSession()
         {
-            var dia = new DiaSourceClass();
+            var dia = DiaSourceFactory.CreateInstance();
             dia.loadDataForExe(module.FileName, null, null);
             dia.openSession(out IDiaSession session);
             return session;
