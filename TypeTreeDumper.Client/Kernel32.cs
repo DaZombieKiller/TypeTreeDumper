@@ -15,9 +15,6 @@ namespace TypeTreeDumper
         }
 
         [DllImport("kernel32", SetLastError = true)]
-        public static extern IntPtr GetModuleHandle(string moduleName);
-
-        [DllImport("kernel32", SetLastError = true)]
         public static extern IntPtr LoadLibrary(string fileName);
     }
 }

@@ -74,17 +74,15 @@ namespace TypeTreeDumper
             }
         }
 
-        IntPtr GetMonoHandle()
+        ProcessModule GetMonoModule()
         {
             foreach (ProcessModule module in Process.GetCurrentProcess().Modules)
             {
                 if (module.ModuleName.StartsWith("mono"))
-                {
-                    return Kernel32.GetModuleHandle(module.ModuleName);
-                }
+                    return module;
             }
 
-            throw new Exception("Could not find mono library");
+            throw new MissingModuleException("mono");
         }
 
         void ExecuteDumper()
@@ -101,10 +99,11 @@ namespace TypeTreeDumper
             {
                 GetUnityVersion = resolver.ResolveFunction<GetUnityVersionDelegate>(
                     "?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ",
-                    "?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ"
+                    "?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ",
+                    "?Application_Get_Custom_PropUnityVersion@@YAPEAVScriptingBackendNativeStringPtrOpaque@@XZ"
                 );
 
-                var mono             = GetMonoHandle();
+                var mono             = GetMonoModule().BaseAddress;
                 var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
                 version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }
