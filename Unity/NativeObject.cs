@@ -15,22 +15,19 @@ namespace Unity
 
         public IntPtr Pointer => nativeObject.Pointer;
 
-        static readonly BitVector32.Section MemLabelIdentifierSection = BitVector32.CreateSection(1 << 11);
-
-        static readonly BitVector32.Section TemporaryFlagsSection = BitVector32.CreateSection(1 << 0, MemLabelIdentifierSection);
-
-        static readonly BitVector32.Section HideFlagsSection = BitVector32.CreateSection(1 << 6, TemporaryFlagsSection);
-
-        static readonly BitVector32.Section IsPersistentSection = BitVector32.CreateSection(1 << 0, HideFlagsSection);
-
-        static readonly BitVector32.Section CachedTypeIndexSection = BitVector32.CreateSection(1 << 10, IsPersistentSection);
-
-
-        public NativeObject(IntPtr ptr, NativeObjectFactory factory, PersistentTypeID persistentTypeID)
+        public NativeObject(IntPtr ptr, NativeObjectFactory factory, PersistentTypeID persistentTypeID, UnityVersion version)
         {
             if (ptr == IntPtr.Zero)
                 throw new ArgumentNullException(nameof(ptr));
-            nativeObject = new V1(ptr);
+
+            if (version < UnityVersion.Unity5_0)
+            {
+                nativeObject = new V1(ptr);
+            }
+            else
+            {
+                nativeObject = new V5_0(ptr);
+            }
             this.factory = factory;
             this.persistentTypeID = persistentTypeID;
         }
@@ -43,31 +40,22 @@ namespace Unity
             }
         }
 
-        public byte TemporaryFlags
-        {
-            get { return (byte)nativeObject.Bits[TemporaryFlagsSection]; }
-        }
+        public byte TemporaryFlags => nativeObject.TemporaryFlags;
 
-        public HideFlags HideFlags
-        {
-            get { return (HideFlags)nativeObject.Bits[HideFlagsSection]; }
-        }
+        public HideFlags HideFlags => nativeObject.HideFlags;
 
-        public bool IsPersistent
-        {
-            get { return nativeObject.Bits[IsPersistentSection] != 0; }
-        }
+        public bool IsPersistent => nativeObject.IsPersistent;
 
-        public uint CachedTypeIndex
-        {
-            get { return (uint)nativeObject.Bits[CachedTypeIndexSection]; }
-        }
+        public uint CachedTypeIndex => nativeObject.CachedTypeIndex;
 
         interface INativeObjectImpl
         {
             int InstanceID { get; }
-            BitVector32 Bits { get; }
             IntPtr Pointer { get; }
+            public byte TemporaryFlags { get;  }
+            public HideFlags HideFlags { get; }
+            public bool IsPersistent { get; }
+            public uint CachedTypeIndex { get; }
         }
     }
 }

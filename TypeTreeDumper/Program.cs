@@ -15,11 +15,13 @@ namespace TypeTreeDumper
             if (args.Length == 0)
                 args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b2\Editor\Unity.exe" };
 
+
             var outPath = Path.Combine(Environment.CurrentDirectory, "Output");
             var logPath = Path.Combine(Environment.CurrentDirectory, "Log.txt");
             var project = Path.GetFullPath("DummyProject");
             var command = Directory.Exists(project) ? "projectPath" : "createProject";
-            
+            var scriptLoader = "";
+
             foreach (var process in Process.GetProcessesByName("Unity"))
             {
                 using var mo       = GetManagementObjectForProcess(process);
@@ -34,12 +36,19 @@ namespace TypeTreeDumper
                 }
             }
 
+            var versionInfo = FileVersionInfo.GetVersionInfo(args[0]);
+            string version = versionInfo.FileVersion;
+            if (version.StartsWith("3."))
+            {
+                scriptLoader = " -executeMethod Loader.Load";
+            }
+
             string channel = null;
-            var server     = new IpcInterface(Console.In, Console.Out, Console.Error, outPath);
+            var server     = new IpcInterface(Console.In, Console.Out, Console.Error, outPath, project);
 
             RemoteHooking.IpcCreateServer(ref channel, WellKnownObjectMode.Singleton, server);
             RemoteHooking.CreateAndInject(args[0],
-                $"-nographics -batchmode -{command} \"{project}\" -logFile \"{logPath}\"",
+                $"-nographics -batchmode -{command} \"{project}\" -logFile \"{logPath}\"{scriptLoader}",
                 InProcessCreationFlags: 0,
                 InjectionOptions.DoNotRequireStrongName,
                 typeof(EntryPoint).Assembly.Location,

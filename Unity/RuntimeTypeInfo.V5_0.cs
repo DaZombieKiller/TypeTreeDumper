@@ -1,21 +1,26 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using ManagedRuntimeTypeInfo = Unity.RuntimeTypeInfo;
 
 namespace Unity
 {
     public partial class RuntimeTypeInfo
     {
-        unsafe class V1 : IRuntimeTypeInfoImpl
+        // Unity 5.0 - 5.1
+        unsafe class V5_0 : IRuntimeTypeInfoImpl
         {
+            [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+            unsafe delegate char* CStrDelegate(TypeTreeString* @this);
+
             RuntimeTypeInfo* TypeInfo;
 
             public ManagedRuntimeTypeInfo Base { get; }
 
             public string Name { get; }
 
-            public string Namespace { get; }
+            public string Namespace => null;
 
             public string Module => null;
 
@@ -23,15 +28,15 @@ namespace Unity
 
             public int Size => TypeInfo->Size;
 
-            public uint TypeIndex => TypeInfo->DerivedFromInfo.TypeIndex;
+            public uint TypeIndex => 0;
 
-            public uint DescendantCount => TypeInfo->DerivedFromInfo.DescendantCount;
+            public uint DescendantCount => 0;
 
             public bool IsAbstract => TypeInfo->IsAbstract;
 
-            public bool IsSealed => TypeInfo->IsSealed;
+            public bool IsSealed => false;
 
-            public bool IsEditorOnly => TypeInfo->IsEditorOnly;
+            public bool IsEditorOnly => false;
 
             public bool IsStripped => false;
 
@@ -40,12 +45,14 @@ namespace Unity
             public ulong AttributeCount => 0;
 
 
-            public V1(IntPtr ptr, UnityVersion version)
+            public V5_0(IntPtr ptr, SymbolResolver resolver, UnityVersion version)
             {
+                var cstr = resolver.ResolveFirstFunctionMatching<CStrDelegate>(
+                    new Regex(Regex.Escape("?c_str@?$basic_string@") + "*"));
                 TypeInfo = (RuntimeTypeInfo*)ptr;
-                Base = TypeInfo->Base != null ? new ManagedRuntimeTypeInfo(new IntPtr(TypeInfo->Base), version) : null;
-                Name = TypeInfo->ClassName != IntPtr.Zero ? Marshal.PtrToStringAnsi(TypeInfo->ClassName) : null;
-                Namespace = TypeInfo->ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(TypeInfo->ClassNamespace) : null;
+                var str = cstr(&TypeInfo->ClassName);
+                Base = TypeInfo->Base != null ? new ManagedRuntimeTypeInfo(new IntPtr(TypeInfo->Base), resolver, version) : null;
+                Name = str != null ? Marshal.PtrToStringAnsi(new IntPtr(str)) : null;
             }
 
             public ref byte GetPinnableReference()
@@ -53,27 +60,21 @@ namespace Unity
                 return ref Unsafe.As<RuntimeTypeInfo, byte>(ref *TypeInfo);
             }
 
+            internal struct TypeTreeString
+            {
+                public fixed byte Data[40];
+            } 
+
             internal unsafe struct RuntimeTypeInfo
             {
                 public RuntimeTypeInfo* Base;
                 public IntPtr Factory;
-                public IntPtr ClassName;
-                public IntPtr ClassNamespace;
                 public PersistentTypeID PersistentTypeID;
+                public int Unknown;
+                public TypeTreeString ClassName;
                 public int Size;
-                public DerivedFromInfo DerivedFromInfo;
                 [MarshalAs(UnmanagedType.U1)]
                 public bool IsAbstract;
-                [MarshalAs(UnmanagedType.U1)]
-                public bool IsSealed;
-                [MarshalAs(UnmanagedType.U1)]
-                public bool IsEditorOnly;
-            }
-
-            internal struct DerivedFromInfo
-            {
-                public uint TypeIndex;
-                public uint DescendantCount;
             }
         }
     }

@@ -13,12 +13,15 @@ namespace TypeTreeDumper
 
         public string OutputDirectory { get; }
 
-        public IpcInterface(TextReader @in, TextWriter @out, TextWriter error, string outputDirectory)
+        public string ProjectDirectory { get; }
+
+        public IpcInterface(TextReader @in, TextWriter @out, TextWriter error, string outputDirectory, string projectDirectory)
         {
             In              = @in;
             Out             = @out;
             Error           = error;
             OutputDirectory = outputDirectory;
+            ProjectDirectory = projectDirectory;
         }
 
         public void Ping()

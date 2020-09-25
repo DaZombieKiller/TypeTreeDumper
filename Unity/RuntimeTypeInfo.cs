@@ -40,14 +40,31 @@ namespace Unity
         public ulong AttributeCount => TypeInfo.AttributeCount;
 
 
-        internal RuntimeTypeInfo(IntPtr ptr, UnityVersion version)
+        internal RuntimeTypeInfo(IntPtr ptr, SymbolResolver resolver, UnityVersion version)
         {
             if (version >= UnityVersion.Unity2017_3)
             {
-                TypeInfo = new V2017_3(ptr, version);
-            } else
+                TypeInfo = new V2017_3(ptr, resolver, version);
+            }
+            else if (version >= UnityVersion.Unity5_5)
             {
-                TypeInfo = new V1(ptr, version);
+                TypeInfo = new V5_5(ptr, resolver, version);
+            }
+            else if (version >= UnityVersion.Unity5_4)
+            {
+                TypeInfo = new V5_4(ptr, resolver, version);
+            }
+            else if (version >= UnityVersion.Unity5_2)
+            {
+                TypeInfo = new V5_2(ptr, resolver, version);
+            }
+            else if (version >= UnityVersion.Unity5_0)
+            {
+                TypeInfo = new V5_0(ptr, resolver, version);
+            }
+            else
+            {
+                TypeInfo = new V3_4(ptr, resolver, version);
             }
         }
 

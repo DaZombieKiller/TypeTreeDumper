@@ -71,6 +71,18 @@ namespace Unity
             throw new UnresolvedSymbolException(name);
         }
 
+        public unsafe T* Resolve<T>(params string[] names)
+            where T : unmanaged
+        {
+            foreach (string name in names)
+            {
+                if (TryResolve(name, out T* address))
+                    return address;
+            }
+
+            throw new UnresolvedSymbolException(string.Join(", ", names));
+        }
+
         public IntPtr ResolveFirstMatching(Regex regex)
         {
             var name = FindSymbolsMatching(regex).FirstOrDefault();
