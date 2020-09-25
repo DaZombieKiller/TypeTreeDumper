@@ -20,6 +20,7 @@ namespace TypeTreeDumper
             ExportRTTI(engine.RuntimeTypes);
             ExportStructDump(engine);
             ExportStructData(engine);
+            Console.WriteLine("Success");
         }
 
         static void ExportRTTI(RuntimeTypeArray runtimeTypes)
@@ -65,7 +66,7 @@ namespace TypeTreeDumper
             using var tw = new StreamWriter(Path.Combine(OutputDirectory, "classes.json"));
             tw.WriteLine("{");
 
-            var entries = from type in runtimeTypes select $"  \"{type.PersistentTypeID}\": \"{type.Name}\"";
+            var entries = from type in runtimeTypes select $"  \"{(int)type.PersistentTypeID}\": \"{type.Name}\"";
             var json    = string.Join(',' + tw.NewLine, entries);
 
             tw.WriteLine(json);

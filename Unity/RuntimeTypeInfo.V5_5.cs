@@ -7,8 +7,8 @@ namespace Unity
 {
     public partial class RuntimeTypeInfo
     {
-        // Unity 2017.3+
-        unsafe class V2017_3 : IRuntimeTypeInfoImpl
+        // Unity 5.5 - 2017.2
+        unsafe class V5_5 : IRuntimeTypeInfoImpl
         {
             RuntimeTypeInfo* TypeInfo;
 
@@ -18,7 +18,7 @@ namespace Unity
 
             public string Namespace { get; }
 
-            public string Module { get; }
+            public string Module => null;
 
             public PersistentTypeID PersistentTypeID => TypeInfo->PersistentTypeID;
 
@@ -34,19 +34,19 @@ namespace Unity
 
             public bool IsEditorOnly => TypeInfo->IsEditorOnly;
 
-            public bool IsStripped => TypeInfo->IsStripped;
+            public bool IsStripped => false;
 
-            public IntPtr Attributes => TypeInfo->Attributes;
+            public IntPtr Attributes => IntPtr.Zero;
 
-            public ulong AttributeCount => TypeInfo->AttributeCount;
+            public ulong AttributeCount => 0;
 
-            public V2017_3(IntPtr ptr, SymbolResolver resolver, UnityVersion version)
+
+            public V5_5(IntPtr ptr, SymbolResolver resolver, UnityVersion version)
             {
                 TypeInfo = (RuntimeTypeInfo*)ptr;
                 Base = TypeInfo->Base != null ? new ManagedRuntimeTypeInfo(new IntPtr(TypeInfo->Base), resolver, version) : null;
                 Name = TypeInfo->ClassName != IntPtr.Zero ? Marshal.PtrToStringAnsi(TypeInfo->ClassName) : null;
                 Namespace = TypeInfo->ClassNamespace != IntPtr.Zero ? Marshal.PtrToStringAnsi(TypeInfo->ClassNamespace) : null;
-                Module = TypeInfo->Module != IntPtr.Zero ? Marshal.PtrToStringAnsi(TypeInfo->Module) : null;
             }
 
             public ref byte GetPinnableReference()
@@ -60,7 +60,6 @@ namespace Unity
                 public IntPtr Factory;
                 public IntPtr ClassName;
                 public IntPtr ClassNamespace;
-                public IntPtr Module;
                 public PersistentTypeID PersistentTypeID;
                 public int Size;
                 public DerivedFromInfo DerivedFromInfo;
@@ -70,10 +69,6 @@ namespace Unity
                 public bool IsSealed;
                 [MarshalAs(UnmanagedType.U1)]
                 public bool IsEditorOnly;
-                [MarshalAs(UnmanagedType.U1)]
-                public bool IsStripped;
-                public IntPtr Attributes;
-                public ulong AttributeCount;
             }
 
             internal struct DerivedFromInfo

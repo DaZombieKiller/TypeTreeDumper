@@ -24,6 +24,20 @@ namespace Unity
 
         public readonly int Build;
 
+        public static readonly UnityVersion Unity5_0 = new UnityVersion(5, 0);
+
+        public static readonly UnityVersion Unity5_1 = new UnityVersion(5, 1);
+
+        public static readonly UnityVersion Unity5_2 = new UnityVersion(5, 2);
+
+        public static readonly UnityVersion Unity5_3 = new UnityVersion(5, 3);
+
+        public static readonly UnityVersion Unity5_4 = new UnityVersion(5, 4);
+
+        public static readonly UnityVersion Unity5_5 = new UnityVersion(5, 5);
+
+        public static readonly UnityVersion Unity5_6 = new UnityVersion(5, 6);
+
         public static readonly UnityVersion Unity2017_1 = new UnityVersion(2017, 1);
 
         public static readonly UnityVersion Unity2017_2 = new UnityVersion(2017, 2);

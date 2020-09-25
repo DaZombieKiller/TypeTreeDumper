@@ -5,6 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using EasyHook;
 using Unity;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace TypeTreeDumper
 {
@@ -18,7 +20,7 @@ namespace TypeTreeDumper
 
         static event Action OnEngineInitialized;
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -55,10 +57,27 @@ namespace TypeTreeDumper
         {
             try
             {
-                var address = resolver.Resolve("?AfterEverythingLoaded@Application@@QEAAXXZ");
-                var hook    = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
-                hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                try
+                {
+                    var patten = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
+                    var address = resolver.ResolveFirstMatching(patten);
+                    var hook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
+                    hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+
+                    //Work around Unity 4.0 to 4.3 licensing bug
+                    if (resolver.TryResolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z", out var validateDatesAddress))
+                    {
+                        var validateDatesHook = LocalHook.Create(validateDatesAddress, new LicenseManager_ValidateDatesDelegate(LicenseManager_ValidateDates), null);
+                        validateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                    }
+                } catch(NotSupportedException)
+                {
+                    //EasyHook can't handle Unity 3.4 and 3.5, use script loader method instead
+                    Console.WriteLine("Could not hook AfterEverythingLoaded, using Script Loader");
+                    InitScriptLoader();
+                }
                 OnEngineInitialized += ExecuteDumper;
+
                 RemoteHooking.WakeUpProcess();
 
                 while (true)
@@ -87,6 +106,7 @@ namespace TypeTreeDumper
 
         void ExecuteDumper()
         {
+            Console.WriteLine("Executing Dumper");
             UnityVersion version;
             GetUnityVersionDelegate GetUnityVersion;
 
@@ -111,6 +131,15 @@ namespace TypeTreeDumper
             Dumper.Execute(new UnityEngine(version, resolver), server.OutputDirectory);
         }
 
+        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
+        unsafe delegate int LicenseManager_ValidateDatesDelegate(IntPtr @this, IntPtr param1);
+
+        unsafe int LicenseManager_ValidateDates(IntPtr @this, IntPtr param1)
+        {
+            Console.WriteLine("Validating dates");
+            return 0;
+        }
+
         void AfterEverythingLoaded(IntPtr app)
         {
             using (HookRuntimeInfo.Handle)
@@ -133,6 +162,36 @@ namespace TypeTreeDumper
             {
                 Environment.Exit(0);
             }
+        }
+
+        delegate void ExecuteDumperDelegate();
+
+        void InitScriptLoader()
+        {
+            var ptr = Marshal.GetFunctionPointerForDelegate(new ExecuteDumperDelegate(ExecuteDumper));
+            var del = Marshal.GetDelegateForFunctionPointer<ExecuteDumperDelegate>(ptr);
+            var assetsDir = Path.Combine(server.ProjectDirectory, "Assets");
+            if(!Directory.Exists(assetsDir)) Directory.CreateDirectory(assetsDir);
+            File.WriteAllText($@"{assetsDir}\Loader.cs",
+                @"
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using UnityEditor;
+
+
+public class Loader
+{
+    delegate void ExecuteDumperDelegate();
+    public static void Load()
+    {
+        File.WriteAllText(""Loader.txt"", ""Hello world!"");
+        var ptr = new IntPtr(ADDRESS);
+        var del = Marshal.GetDelegateForFunctionPointer(ptr, typeof(ExecuteDumperDelegate));
+        del.DynamicInvoke();
+        EditorApplication.Exit(0);
+    }
+}".Replace("ADDRESS", ptr.ToInt64().ToString()));
         }
     }
 }

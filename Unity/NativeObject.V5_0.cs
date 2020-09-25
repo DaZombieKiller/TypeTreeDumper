@@ -5,19 +5,18 @@ namespace Unity
 {
     public partial class NativeObject
     {
-        internal unsafe class V1 : INativeObjectImpl
+        // Unity 5.0+
+        internal unsafe class V5_0 : INativeObjectImpl
         {
-            static readonly BitVector32.Section MemLabelIdentifierSection = BitVector32.CreateSection(1 << 12);
+            static readonly BitVector32.Section MemLabelIdentifierSection = BitVector32.CreateSection(1 << 11);
 
-            static readonly BitVector32.Section IsRootOwnerSection = BitVector32.CreateSection(1 << 0, MemLabelIdentifierSection);
+            static readonly BitVector32.Section TemporaryFlagsSection = BitVector32.CreateSection(1 << 0, MemLabelIdentifierSection);
 
-            static readonly BitVector32.Section TemporaryFlagsSection = BitVector32.CreateSection(1 << 0, IsRootOwnerSection);
-
-            static readonly BitVector32.Section HideFlagsSection = BitVector32.CreateSection(1 << 3, TemporaryFlagsSection);
+            static readonly BitVector32.Section HideFlagsSection = BitVector32.CreateSection(1 << 6, TemporaryFlagsSection);
 
             static readonly BitVector32.Section IsPersistentSection = BitVector32.CreateSection(1 << 0, HideFlagsSection);
 
-            static readonly BitVector32.Section CachedTypeIndexSection = BitVector32.CreateSection(1 << 11, IsPersistentSection);
+            static readonly BitVector32.Section CachedTypeIndexSection = BitVector32.CreateSection(1 << 10, IsPersistentSection);
 
             NativeObject* nativeObject;
 
@@ -45,7 +44,7 @@ namespace Unity
                 get { return (uint)nativeObject->bits[CachedTypeIndexSection]; }
             }
 
-            public V1(IntPtr ptr)
+            public V5_0(IntPtr ptr)
             {
                 nativeObject = (NativeObject*)ptr;
             }

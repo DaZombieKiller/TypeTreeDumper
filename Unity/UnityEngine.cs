@@ -18,8 +18,8 @@
         {
             Version       = version;
             CommonString  = new CommonString(resolver);
-            TypeTreeFactory = new TypeTreeFactory(version, CommonString, resolver);
             RuntimeTypes  = new RuntimeTypeArray(version, resolver);
+            TypeTreeFactory = new TypeTreeFactory(version, CommonString, resolver);
             ObjectFactory = new NativeObjectFactory(version, resolver);
         }
     }
