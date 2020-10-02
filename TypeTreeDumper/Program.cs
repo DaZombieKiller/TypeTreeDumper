@@ -71,6 +71,9 @@ namespace TypeTreeDumper
 
         static string EscapeArgument(string arg)
         {
+            if (string.IsNullOrWhiteSpace(arg))
+                return '"' + (arg ?? string.Empty) + '"';
+
             if (arg.Contains(' ') || arg.Contains('"'))
                 return '"' + arg.Replace("\"", "\\\"") + '"';
 
