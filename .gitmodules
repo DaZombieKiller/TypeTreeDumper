@@ -1,0 +1,3 @@
+[submodule "NativeDetours/Detours"]
+	path = NativeDetours/Detours
+	url = git@github.com:microsoft/Detours.git

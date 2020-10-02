@@ -24,5 +24,8 @@ namespace TypeTreeDumper
 
         [DllImport("kernel32", SetLastError = true)]
         public static extern bool AttachConsole(int dwProcessId);
+
+        [DllImport("kernel32")]
+        public static extern IntPtr GetCurrentThread();
     }
 }

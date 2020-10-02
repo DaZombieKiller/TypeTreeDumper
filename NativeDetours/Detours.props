@@ -1,0 +1,6 @@
+<Project>
+    <ItemGroup>
+        <Content Include="$(MSBuildThisFileDirectory)detours64.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+        <Content Include="$(MSBuildThisFileDirectory)detours32.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+</Project>

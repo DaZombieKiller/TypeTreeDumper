@@ -12,4 +12,5 @@
     </ItemGroup>
     
     <Import Project="../Dia2Lib/Dia2Lib.props" />
+    <Import Project="../NativeDetours/Detours.props" />
 </Project>
