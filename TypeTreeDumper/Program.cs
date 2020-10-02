@@ -72,7 +72,7 @@ namespace TypeTreeDumper
         static string EscapeArgument(string arg)
         {
             if (arg.Contains(' ') || arg.Contains('"'))
-                return '"' + arg.Replace("\"", "\\\"");
+                return '"' + arg.Replace("\"", "\\\"") + '"';
 
             return arg;
         }
