@@ -1,24 +1,26 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using EasyHook;
 using Unity;
-using System.Text.RegularExpressions;
-using System.IO;
 
 namespace TypeTreeDumper
 {
     public class EntryPoint : IEntryPoint
     {
-        static IpcInterface server;
-
         static ProcessModule module;
 
         static DiaSymbolResolver resolver;
 
         static event Action OnEngineInitialized;
+
+        static string OutputPath;
+
+        static string ProjectPath;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
@@ -32,18 +34,22 @@ namespace TypeTreeDumper
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate IntPtr MonoStringToUTF8Delegate(IntPtr monoString);
 
-        [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public EntryPoint(RemoteHooking.IContext context, string channelName)
+        static void AttachToParentConsole()
         {
-            server = RemoteHooking.IpcConnectClient<IpcInterface>(channelName);
-            Console.SetIn(server.In);
-            Console.SetOut(new TextWriterWrapper(server.Out));
-            Console.SetError(new TextWriterWrapper(server.Error));
+            Kernel32.FreeConsole();
+            Kernel32.AttachConsole(Kernel32.ATTACH_PARENT_PROCESS);
+        }
 
+        [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
+        public EntryPoint(RemoteHooking.IContext context, string outputPath, string projectPath)
+        {
             try
             {
-                module   = Process.GetCurrentProcess().MainModule;
-                resolver = new DiaSymbolResolver(module);
+                AttachToParentConsole();
+                OutputPath  = outputPath;
+                ProjectPath = projectPath;
+                module      = Process.GetCurrentProcess().MainModule;
+                resolver    = new DiaSymbolResolver(module);
             }
             catch (Exception ex)
             {
@@ -53,38 +59,36 @@ namespace TypeTreeDumper
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public void Run(RemoteHooking.IContext context, string channelName)
+        public void Run(RemoteHooking.IContext context, string outputPath, string projectPath)
         {
             try
             {
+                AttachToParentConsole();
+
                 try
                 {
-                    var patten = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
+                    var patten  = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
                     var address = resolver.ResolveFirstMatching(patten);
-                    var hook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
+                    var hook    = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
                     hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
 
-                    //Work around Unity 4.0 to 4.3 licensing bug
+                    // Work around Unity 4.0 to 4.3 licensing bug
                     if (resolver.TryResolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z", out var validateDatesAddress))
                     {
                         var validateDatesHook = LocalHook.Create(validateDatesAddress, new LicenseManager_ValidateDatesDelegate(LicenseManager_ValidateDates), null);
                         validateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                     }
-                } catch(NotSupportedException)
+                }
+                catch (NotSupportedException)
                 {
-                    //EasyHook can't handle Unity 3.4 and 3.5, use script loader method instead
+                    // EasyHook can't handle Unity 3.4 and 3.5, use script loader method instead
                     Console.WriteLine("Could not hook AfterEverythingLoaded, using Script Loader");
-                    InitScriptLoader();
+                    GenerateLoaderScript();
                 }
+
                 OnEngineInitialized += ExecuteDumper;
-
                 RemoteHooking.WakeUpProcess();
-
-                while (true)
-                {
-                    server.Ping();
-                    Thread.Sleep(500);
-                }
+                Thread.Sleep(Timeout.Infinite);
             }
             catch (Exception ex)
             {
@@ -128,7 +132,7 @@ namespace TypeTreeDumper
                 version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }
 
-            Dumper.Execute(new UnityEngine(version, resolver), server.OutputDirectory);
+            Dumper.Execute(new UnityEngine(version, resolver), OutputPath);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
@@ -149,8 +153,14 @@ namespace TypeTreeDumper
                 method.Invoke(app);
             }
 
+            HandleAfterEverythingLoaded();
+        }
+
+        void HandleAfterEverythingLoaded()
+        {
             try
             {
+                AttachToParentConsole();
                 OnEngineInitialized?.Invoke();
             }
             catch (Exception ex)
@@ -164,34 +174,33 @@ namespace TypeTreeDumper
             }
         }
 
-        delegate void ExecuteDumperDelegate();
-
-        void InitScriptLoader()
+        void GenerateLoaderScript()
         {
-            var ptr = Marshal.GetFunctionPointerForDelegate(new ExecuteDumperDelegate(ExecuteDumper));
-            var del = Marshal.GetDelegateForFunctionPointer<ExecuteDumperDelegate>(ptr);
-            var assetsDir = Path.Combine(server.ProjectDirectory, "Assets");
-            if(!Directory.Exists(assetsDir)) Directory.CreateDirectory(assetsDir);
-            File.WriteAllText($@"{assetsDir}\Loader.cs",
-                @"
+            var function  = Marshal.GetFunctionPointerForDelegate<Action>(HandleAfterEverythingLoaded);
+            var assetsDir = Path.Combine(ProjectPath, "Assets");
+
+            if (!Directory.Exists(assetsDir))
+                Directory.CreateDirectory(assetsDir);
+
+            var loader = string.Format(LoaderTemplate.Trim(), function.ToInt64());
+            File.WriteAllText(Path.Combine(assetsDir, "Loader.cs"), loader);
+        }
+
+        const string LoaderTemplate = @"
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEditor;
 
-
 public class Loader
-{
-    delegate void ExecuteDumperDelegate();
+{{
     public static void Load()
-    {
-        File.WriteAllText(""Loader.txt"", ""Hello world!"");
-        var ptr = new IntPtr(ADDRESS);
-        var del = Marshal.GetDelegateForFunctionPointer(ptr, typeof(ExecuteDumperDelegate));
+    {{
+        var ptr = new IntPtr(0x{0:X});
+        var del = Marshal.GetDelegateForFunctionPointer(ptr, typeof(Action));
         del.DynamicInvoke();
-        EditorApplication.Exit(0);
-    }
-}".Replace("ADDRESS", ptr.ToInt64().ToString()));
-        }
+    }}
+}}
+";
     }
 }

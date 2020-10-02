@@ -1,9 +1,10 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Management;
-using System.Runtime.Remoting;
+using System.Diagnostics;
+using System.Collections.Generic;
 using EasyHook;
 
 namespace TypeTreeDumper
@@ -13,14 +14,18 @@ namespace TypeTreeDumper
         static void Main(string[] args)
         {
             if (args.Length == 0)
-                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b2\Editor\Unity.exe" };
+                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b4\Editor\Unity.exe" };
 
+            var projectDirectory = Path.GetFullPath("DummyProject");
+            var commandLineArgs  = new List<string>
+            {
+                "-nographics",
+                "-batchmode",
+                "-logFile", Path.Combine(Environment.CurrentDirectory, "Log.txt")
+            };
 
-            var outPath = Path.Combine(Environment.CurrentDirectory, "Output");
-            var logPath = Path.Combine(Environment.CurrentDirectory, "Log.txt");
-            var project = Path.GetFullPath("DummyProject");
-            var command = Directory.Exists(project) ? "projectPath" : "createProject";
-            var scriptLoader = "";
+            commandLineArgs.Add(Directory.Exists(projectDirectory) ? "-projectPath" : "-createProject");
+            commandLineArgs.Add(projectDirectory);
 
             foreach (var process in Process.GetProcessesByName("Unity"))
             {
@@ -29,32 +34,28 @@ namespace TypeTreeDumper
                 var commandLine    = mo.GetPropertyValue("CommandLine")    as string ?? string.Empty;
 
                 if (executablePath.Equals(args[0], StringComparison.OrdinalIgnoreCase) &&
-                    commandLine.Contains($"-{command} \"{project}\""))
+                    commandLine.Contains(EscapeArgument(projectDirectory)))
                 {
                     Console.WriteLine("Terminating orphaned editor process {0}...", process.Id);
                     process.Kill();
                 }
             }
 
-            var versionInfo = FileVersionInfo.GetVersionInfo(args[0]);
-            string version = versionInfo.FileVersion;
-            if (version.StartsWith("3."))
+            if (FileVersionInfo.GetVersionInfo(args[0]).FileMajorPart == 3)
             {
-                scriptLoader = " -executeMethod Loader.Load";
+                commandLineArgs.Add("-executeMethod");
+                commandLineArgs.Add("Loader.Load");
             }
 
-            string channel = null;
-            var server     = new IpcInterface(Console.In, Console.Out, Console.Error, outPath, project);
-
-            RemoteHooking.IpcCreateServer(ref channel, WellKnownObjectMode.Singleton, server);
             RemoteHooking.CreateAndInject(args[0],
-                $"-nographics -batchmode -{command} \"{project}\" -logFile \"{logPath}\"{scriptLoader}",
+                CreateCommandLine(commandLineArgs),
                 InProcessCreationFlags: 0,
                 InjectionOptions.DoNotRequireStrongName,
                 typeof(EntryPoint).Assembly.Location,
                 typeof(EntryPoint).Assembly.Location,
                 out int processID,
-                channel
+                Path.Combine(Environment.CurrentDirectory, "Output"),
+                projectDirectory
             );
 
             Process.GetProcessById(processID).WaitForExit();
@@ -66,6 +67,29 @@ namespace TypeTreeDumper
             using var searcher  = new ManagementObjectSearcher(query);
             using var processes = searcher.Get();
             return processes.OfType<ManagementBaseObject>().FirstOrDefault();
+        }
+
+        static string EscapeArgument(string arg)
+        {
+            if (arg.Contains(' ') || arg.Contains('"'))
+                return '"' + arg.Replace("\"", "\\\"");
+
+            return arg;
+        }
+
+        static string CreateCommandLine(List<string> args)
+        {
+            var sb = new StringBuilder();
+
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (i > 0)
+                    sb.Append(' ');
+
+                sb.Append(EscapeArgument(args[i]));
+            }
+
+            return sb.ToString();
         }
     }
 }
