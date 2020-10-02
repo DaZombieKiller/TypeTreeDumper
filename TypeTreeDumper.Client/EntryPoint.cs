@@ -97,15 +97,15 @@ namespace TypeTreeDumper
             }
         }
 
-        ProcessModule GetMonoModule()
+        static ProcessModule FindProcessModule(Regex regex)
         {
             foreach (ProcessModule module in Process.GetCurrentProcess().Modules)
             {
-                if (module.ModuleName.StartsWith("mono"))
+                if (regex.IsMatch(module.ModuleName))
                     return module;
             }
 
-            throw new MissingModuleException("mono");
+            throw new MissingModuleException(regex.ToString());
         }
 
         void ExecuteDumper()
@@ -127,7 +127,7 @@ namespace TypeTreeDumper
                     "?Application_Get_Custom_PropUnityVersion@@YAPEAVScriptingBackendNativeStringPtrOpaque@@XZ"
                 );
 
-                var mono             = GetMonoModule().BaseAddress;
+                var mono             = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
                 var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
                 version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }

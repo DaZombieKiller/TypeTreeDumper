@@ -26,10 +26,15 @@ namespace TypeTreeDumper
 
         public override IEnumerable<string> FindSymbolsMatching(Regex expression)
         {
+            var options = NameSearchOptions.RegularExpression;
+
+            if (expression.Options.HasFlag(RegexOptions.IgnoreCase))
+                options |= NameSearchOptions.CaseInsensitive;
+
             session.Value.globalScope.findChildren(
                 SymTagEnum.SymTagPublicSymbol,
                 expression.ToString(),
-                (uint)NameSearchOptions.RegularExpression,
+                (uint)options,
                 out IDiaEnumSymbols symbols
             );
 
