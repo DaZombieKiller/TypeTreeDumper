@@ -19,8 +19,6 @@ namespace TypeTreeDumper
 
         static string OutputPath;
 
-        static string ProjectPath;
-
         static DetourHook AfterEverythingLoadedHook;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
@@ -42,15 +40,14 @@ namespace TypeTreeDumper
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public EntryPoint(RemoteHooking.IContext context, string outputPath, string projectPath)
+        public EntryPoint(RemoteHooking.IContext context, EntryPointArgs args)
         {
             try
             {
                 AttachToParentConsole();
-                OutputPath  = outputPath;
-                ProjectPath = projectPath;
-                module      = Process.GetCurrentProcess().MainModule;
-                resolver    = new DiaSymbolResolver(module);
+                OutputPath = args.OutputPath;
+                module     = Process.GetCurrentProcess().MainModule;
+                resolver   = new DiaSymbolResolver(module);
             }
             catch (Exception ex)
             {
@@ -60,12 +57,11 @@ namespace TypeTreeDumper
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public void Run(RemoteHooking.IContext context, string outputPath, string projectPath)
+        public void Run(RemoteHooking.IContext context, EntryPointArgs args)
         {
             try
             {
                 AttachToParentConsole();
-
                 var pattern = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
                 var address = resolver.ResolveFirstMatching(pattern);
 
@@ -98,7 +94,7 @@ namespace TypeTreeDumper
             throw new MissingModuleException(regex.ToString());
         }
 
-        void ExecuteDumper()
+        static void ExecuteDumper()
         {
             Console.WriteLine("Executing Dumper");
             UnityVersion version;
@@ -128,20 +124,20 @@ namespace TypeTreeDumper
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate int ValidateDatesDelegate(IntPtr @this, IntPtr param1);
 
-        int ValidateDates(IntPtr @this, IntPtr param1)
+        static int ValidateDates(IntPtr @this, IntPtr param1)
         {
             Console.WriteLine("LicenseManager::ValidateDates");
             return 0;
         }
 
-        void AfterEverythingLoaded(IntPtr app)
+        static void AfterEverythingLoaded(IntPtr app)
         {
             Marshal.GetDelegateForFunctionPointer<AfterEverythingLoadedDelegate>(AfterEverythingLoadedHook.Pointer).Invoke(app);
             AfterEverythingLoadedHook.Dispose();
             HandleAfterEverythingLoaded();
         }
 
-        void HandleAfterEverythingLoaded()
+        static void HandleAfterEverythingLoaded()
         {
             try
             {

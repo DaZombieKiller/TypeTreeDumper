@@ -54,8 +54,11 @@ namespace TypeTreeDumper
                 typeof(EntryPoint).Assembly.Location,
                 typeof(EntryPoint).Assembly.Location,
                 out int processID,
-                Path.Combine(Environment.CurrentDirectory, "Output"),
-                projectDirectory
+                new EntryPointArgs
+                {
+                    OutputPath  = Path.Combine(Environment.CurrentDirectory, "Output"),
+                    ProjectPath = projectDirectory
+                }
             );
 
             Process.GetProcessById(processID).WaitForExit();

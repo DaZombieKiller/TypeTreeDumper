@@ -77,9 +77,9 @@ namespace TypeTreeDumper
             s_DetourDetach            = Kernel32.GetProcAddress<DetourDetachDelegate>(module, "DetourDetach");
         }
 
-        public static int TransactionBegin() => s_DetourTransactionBegin.Invoke();
+        public static int TransactionBegin() => s_DetourTransactionBegin();
 
-        public static int TransactionCommit() => s_DetourTransactionCommit.Invoke();
+        public static int TransactionCommit() => s_DetourTransactionCommit();
 
         public static int UpdateThread(IntPtr thread) => s_DetourUpdateThread(thread);
 
