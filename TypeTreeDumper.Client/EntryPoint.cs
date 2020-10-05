@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -37,6 +38,9 @@ namespace TypeTreeDumper
         {
             Kernel32.FreeConsole();
             Kernel32.AttachConsole(Kernel32.ATTACH_PARENT_PROCESS);
+            Console.SetIn(new StreamReader(Console.OpenStandardInput()));
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+            Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
