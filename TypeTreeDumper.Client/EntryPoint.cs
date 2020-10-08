@@ -20,10 +20,17 @@ namespace TypeTreeDumper
 
         static string OutputPath;
 
-        static DetourHook AfterEverythingLoadedHook;
+        static FileVersionInfo VersionInfo;
+
+        static DetourHook<AfterEverythingLoadedDelegate> AfterEverythingLoadedHook;
+
+        static DetourHook<PlayerInitEngineNoGraphicsDelegate> PlayerInitEngineNoGraphicsHook;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate bool PlayerInitEngineNoGraphicsDelegate(IntPtr a, IntPtr b);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void UnityVersionDelegate(out UnityVersion version, [MarshalAs(UnmanagedType.LPStr)] string value);
@@ -49,9 +56,10 @@ namespace TypeTreeDumper
             try
             {
                 AttachToParentConsole();
-                OutputPath = args.OutputPath;
-                module     = Process.GetCurrentProcess().MainModule;
-                resolver   = new DiaSymbolResolver(module);
+                OutputPath  = args.OutputPath;
+                module      = Process.GetCurrentProcess().MainModule;
+                resolver    = new DiaSymbolResolver(module);
+                VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
             }
             catch (Exception ex)
             {
@@ -66,15 +74,26 @@ namespace TypeTreeDumper
             try
             {
                 AttachToParentConsole();
-                var pattern = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
-                var address = resolver.ResolveFirstMatching(pattern);
 
-                // Hook
-                AfterEverythingLoadedHook = DetourHook.Create<AfterEverythingLoadedDelegate>(address, AfterEverythingLoaded);
+                if (VersionInfo.FileMajorPart > 3)
+                {
+                    var pattern = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
+                    var address = resolver.ResolveFirstMatching(pattern);
+                    AfterEverythingLoadedHook = DetourHook.Create<AfterEverythingLoadedDelegate>(address, AfterEverythingLoaded);
+                }
+                else
+                {
+                    var pattern = new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*");
+                    var address = resolver.ResolveFirstMatching(pattern);
+                    PlayerInitEngineNoGraphicsHook = DetourHook.Create<PlayerInitEngineNoGraphicsDelegate>(address, PlayerInitEngineNoGraphics);
+                }
 
                 // Work around Unity 4.0 to 4.3 licensing bug
-                if (resolver.TryResolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z", out address))
+                if (VersionInfo.FileMajorPart == 4 && VersionInfo.FileMinorPart <= 3)
+                {
+                    var address = resolver.Resolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z");
                     DetourHook.Create<ValidateDatesDelegate>(address, ValidateDates);
+                }
 
                 OnEngineInitialized += ExecuteDumper;
                 RemoteHooking.WakeUpProcess();
@@ -109,7 +128,7 @@ namespace TypeTreeDumper
                 var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
                 ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
             }
-            else
+            else if (VersionInfo.FileMajorPart > 3)
             {
                 GetUnityVersion = resolver.ResolveFunction<GetUnityVersionDelegate>(
                     "?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ",
@@ -120,6 +139,14 @@ namespace TypeTreeDumper
                 var mono             = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
                 var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
                 version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
+            }
+            else
+            {
+                version = new UnityVersion(
+                    VersionInfo.FileMajorPart,
+                    VersionInfo.FileMinorPart,
+                    VersionInfo.FileBuildPart
+                );
             }
 
             Dumper.Execute(new UnityEngine(version, resolver), OutputPath);
@@ -134,14 +161,22 @@ namespace TypeTreeDumper
             return 0;
         }
 
-        static void AfterEverythingLoaded(IntPtr app)
+        static bool PlayerInitEngineNoGraphics(IntPtr a, IntPtr b)
         {
-            Marshal.GetDelegateForFunctionPointer<AfterEverythingLoadedDelegate>(AfterEverythingLoadedHook.Pointer).Invoke(app);
-            AfterEverythingLoadedHook.Dispose();
-            HandleAfterEverythingLoaded();
+            PlayerInitEngineNoGraphicsHook.Original(a, b);
+            PlayerInitEngineNoGraphicsHook.Dispose();
+            HandleEngineInitialization();
+            return true;
         }
 
-        static void HandleAfterEverythingLoaded()
+        static void AfterEverythingLoaded(IntPtr app)
+        {
+            AfterEverythingLoadedHook.Original(app);
+            AfterEverythingLoadedHook.Dispose();
+            HandleEngineInitialization();
+        }
+
+        static void HandleEngineInitialization()
         {
             try
             {

@@ -49,6 +49,9 @@ namespace TypeTreeDumper
 
         unsafe static void ExportStringData(CommonString strings)
         {
+            if (strings.BufferBegin == IntPtr.Zero || strings.BufferEnd == IntPtr.Zero)
+                return;
+
             Console.WriteLine("Writing common string buffer...");
             var source = (byte*)strings.BufferBegin;
             var length = (byte*)strings.BufferEnd - source - 1;

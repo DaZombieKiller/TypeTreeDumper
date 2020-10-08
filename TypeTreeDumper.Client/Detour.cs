@@ -3,19 +3,15 @@ using System.Runtime.InteropServices;
 
 namespace TypeTreeDumper
 {
-    public struct DetourHook : IDisposable
+    public static class DetourHook
     {
-        public IntPtr Pointer;
-            
-        public IntPtr DetourPointer;
-
-        public static DetourHook Create<T>(IntPtr pointer, T detour)
+        public static DetourHook<T> Create<T>(IntPtr pointer, T detour)
             where T : Delegate
         {
-            var hook = new DetourHook
+            var hook = new DetourHook<T>
             {
                 Pointer       = pointer,
-                DetourPointer = Marshal.GetFunctionPointerForDelegate(detour)
+                DetourPointer = Marshal.GetFunctionPointerForDelegate(detour),
             };
 
             Detour.TransactionBegin();
@@ -24,6 +20,16 @@ namespace TypeTreeDumper
             Detour.TransactionCommit();
             return hook;
         }
+    }
+
+    public struct DetourHook<T> : IDisposable
+        where T : Delegate
+    {
+        public IntPtr Pointer;
+            
+        public IntPtr DetourPointer;
+
+        public T Original => Marshal.GetDelegateForFunctionPointer<T>(Pointer);
 
         public void Dispose()
         {

@@ -14,7 +14,13 @@ namespace TypeTreeDumper
         static void Main(string[] args)
         {
             if (args.Length == 0)
-                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b4\Editor\Unity.exe" };
+            {
+                args = new[]
+                {
+                    //@"C:\Program Files\Unity\Hub\Editor\2020.2.0b4\Editor\Unity.exe",
+                    @"Unity357_DummyApp\player_win.exe",
+                };
+            }
 
             var projectDirectory = Path.GetFullPath("DummyProject");
             var commandLineArgs  = new List<string>
@@ -39,12 +45,6 @@ namespace TypeTreeDumper
                     Console.WriteLine("Terminating orphaned editor process {0}...", process.Id);
                     process.Kill();
                 }
-            }
-
-            if (FileVersionInfo.GetVersionInfo(args[0]).FileMajorPart == 3)
-            {
-                commandLineArgs.Add("-executeMethod");
-                commandLineArgs.Add("Loader.Load");
             }
 
             RemoteHooking.CreateAndInject(args[0],
