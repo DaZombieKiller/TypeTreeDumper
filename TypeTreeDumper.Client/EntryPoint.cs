@@ -30,6 +30,7 @@ namespace TypeTreeDumper
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
         delegate bool PlayerInitEngineNoGraphicsDelegate(IntPtr a, IntPtr b);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
