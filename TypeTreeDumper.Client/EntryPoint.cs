@@ -129,7 +129,7 @@ namespace TypeTreeDumper
                 var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
                 ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
             }
-            else if (VersionInfo.FileMajorPart > 3)
+            else
             {
                 GetUnityVersion = resolver.ResolveFunction<GetUnityVersionDelegate>(
                     "?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ",
@@ -140,14 +140,6 @@ namespace TypeTreeDumper
                 var mono             = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
                 var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
                 version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
-            }
-            else
-            {
-                version = new UnityVersion(
-                    VersionInfo.FileMajorPart,
-                    VersionInfo.FileMinorPart,
-                    VersionInfo.FileBuildPart
-                );
             }
 
             Dumper.Execute(new UnityEngine(version, resolver), OutputPath);
