@@ -19,7 +19,7 @@ namespace Unity
 
         public PersistentTypeID PersistentTypeID => TypeInfo.PersistentTypeID;
 
-        public RuntimeTypeInfo Base { get; }
+        public RuntimeTypeInfo Base => TypeInfo.Base;
 
         public int Size => TypeInfo.Size;
 
@@ -38,7 +38,6 @@ namespace Unity
         public IntPtr Attributes => TypeInfo.Attributes;
 
         public ulong AttributeCount => TypeInfo.AttributeCount;
-
 
         internal RuntimeTypeInfo(IntPtr ptr, SymbolResolver resolver, UnityVersion version)
         {

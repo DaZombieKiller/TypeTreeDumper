@@ -36,7 +36,9 @@ namespace Unity
             {
                 generateTypeTree = resolver.ResolveFunction<GenerateTypeTreeDelegate>(
                     "?GenerateTypeTree@@YAXAEBVObject@@AEAVTypeTree@@W4TransferInstructionFlags@@@Z",
-                    "?GenerateTypeTree@@YAXAEAVObject@@PEAVTypeTree@@W4TransferInstructionFlags@@@Z");
+                    "?GenerateTypeTree@@YAXAEAVObject@@PEAVTypeTree@@W4TransferInstructionFlags@@@Z",
+                    "?GenerateTypeTree@@YAXAAVObject@@PAVTypeTree@@H@Z"
+                );
             }
         }
 

@@ -14,7 +14,7 @@ namespace TypeTreeDumper
         static void Main(string[] args)
         {
             if (args.Length == 0)
-                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b4\Editor\Unity.exe" };
+                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b7\Editor\Unity.exe" };
 
             var projectDirectory = Path.GetFullPath("DummyProject");
             var commandLineArgs  = new List<string>
@@ -41,12 +41,6 @@ namespace TypeTreeDumper
                 }
             }
 
-            if (FileVersionInfo.GetVersionInfo(args[0]).FileMajorPart == 3)
-            {
-                commandLineArgs.Add("-executeMethod");
-                commandLineArgs.Add("Loader.Load");
-            }
-
             RemoteHooking.CreateAndInject(args[0],
                 CreateCommandLine(commandLineArgs),
                 InProcessCreationFlags: 0,
@@ -54,8 +48,11 @@ namespace TypeTreeDumper
                 typeof(EntryPoint).Assembly.Location,
                 typeof(EntryPoint).Assembly.Location,
                 out int processID,
-                Path.Combine(Environment.CurrentDirectory, "Output"),
-                projectDirectory
+                new EntryPointArgs
+                {
+                    OutputPath  = Path.Combine(Environment.CurrentDirectory, "Output"),
+                    ProjectPath = projectDirectory
+                }
             );
 
             Process.GetProcessById(processID).WaitForExit();
@@ -74,7 +71,7 @@ namespace TypeTreeDumper
             if (string.IsNullOrWhiteSpace(arg))
                 return '"' + (arg ?? string.Empty) + '"';
 
-            if (arg.Contains(' ') || arg.Contains('"'))
+            if (arg.Contains('.') || arg.Contains(' ') || arg.Contains('"'))
                 return '"' + arg.Replace("\"", "\\\"") + '"';
 
             return arg;

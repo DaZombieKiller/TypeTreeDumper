@@ -20,10 +20,20 @@ namespace TypeTreeDumper
 
         static string OutputPath;
 
-        static string ProjectPath;
+        static FileVersionInfo VersionInfo;
+
+        static LocalHook AfterEverythingLoadedHook;
+
+        static LocalHook PlayerInitEngineNoGraphicsHook;
+
+        static LocalHook ValidateDatesHook;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.U1)]
+        delegate bool PlayerInitEngineNoGraphicsDelegate(IntPtr a, IntPtr b);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate void UnityVersionDelegate(out UnityVersion version, [MarshalAs(UnmanagedType.LPStr)] string value);
@@ -38,18 +48,21 @@ namespace TypeTreeDumper
         {
             Kernel32.FreeConsole();
             Kernel32.AttachConsole(Kernel32.ATTACH_PARENT_PROCESS);
+            Console.SetIn(new StreamReader(Console.OpenStandardInput()));
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+            Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public EntryPoint(RemoteHooking.IContext context, string outputPath, string projectPath)
+        public EntryPoint(RemoteHooking.IContext context, EntryPointArgs args)
         {
             try
             {
                 AttachToParentConsole();
-                OutputPath  = outputPath;
-                ProjectPath = projectPath;
+                OutputPath  = args.OutputPath;
                 module      = Process.GetCurrentProcess().MainModule;
                 resolver    = new DiaSymbolResolver(module);
+                VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
             }
             catch (Exception ex)
             {
@@ -59,31 +72,34 @@ namespace TypeTreeDumper
         }
 
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public void Run(RemoteHooking.IContext context, string outputPath, string projectPath)
+        public void Run(RemoteHooking.IContext context, EntryPointArgs args)
         {
             try
             {
                 AttachToParentConsole();
 
-                try
+                if (VersionInfo.FileMajorPart > 3)
                 {
-                    var patten  = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
-                    var address = resolver.ResolveFirstMatching(patten);
-                    var hook    = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
-                    hook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
-
-                    // Work around Unity 4.0 to 4.3 licensing bug
-                    if (resolver.TryResolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z", out var validateDatesAddress))
-                    {
-                        var validateDatesHook = LocalHook.Create(validateDatesAddress, new LicenseManager_ValidateDatesDelegate(LicenseManager_ValidateDates), null);
-                        validateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
-                    }
+                    var pattern = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
+                    var address = resolver.ResolveFirstMatching(pattern);
+                    AfterEverythingLoadedHook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
+                    AfterEverythingLoadedHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
-                catch (NotSupportedException)
+                else
                 {
-                    // EasyHook can't handle Unity 3.4 and 3.5, use script loader method instead
-                    Console.WriteLine("Could not hook AfterEverythingLoaded, using Script Loader");
-                    GenerateLoaderScript();
+                    // For Unity 3.x and below, we need to use the player instead of the editor due to obfuscation.
+                    var pattern = new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*");
+                    var address = resolver.ResolveFirstMatching(pattern);
+                    PlayerInitEngineNoGraphicsHook = LocalHook.Create(address, new PlayerInitEngineNoGraphicsDelegate(PlayerInitEngineNoGraphics), null);
+                    PlayerInitEngineNoGraphicsHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                }
+
+                // Work around Unity 4.0 to 4.3 licensing bug
+                if (VersionInfo.FileMajorPart == 4 && VersionInfo.FileMinorPart <= 3)
+                {
+                    var address = resolver.Resolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z");
+                    ValidateDatesHook = LocalHook.Create(address, new ValidateDatesDelegate(ValidateDates), null);
+                    ValidateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
 
                 OnEngineInitialized += ExecuteDumper;
@@ -108,7 +124,7 @@ namespace TypeTreeDumper
             throw new MissingModuleException(regex.ToString());
         }
 
-        void ExecuteDumper()
+        static void ExecuteDumper()
         {
             Console.WriteLine("Executing Dumper");
             UnityVersion version;
@@ -136,15 +152,28 @@ namespace TypeTreeDumper
         }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        unsafe delegate int LicenseManager_ValidateDatesDelegate(IntPtr @this, IntPtr param1);
+        delegate int ValidateDatesDelegate(IntPtr @this, IntPtr param1);
 
-        unsafe int LicenseManager_ValidateDates(IntPtr @this, IntPtr param1)
+        static int ValidateDates(IntPtr @this, IntPtr param1)
         {
             Console.WriteLine("Validating dates");
             return 0;
         }
 
-        void AfterEverythingLoaded(IntPtr app)
+        static bool PlayerInitEngineNoGraphics(IntPtr a, IntPtr b)
+        {
+            using (HookRuntimeInfo.Handle)
+            {
+                var bypass = HookRuntimeInfo.Handle.HookBypassAddress;
+                var method = Marshal.GetDelegateForFunctionPointer<PlayerInitEngineNoGraphicsDelegate>(bypass);
+                method.Invoke(a, b);
+            }
+
+            HandleEngineInitialization();
+            return true;
+        }
+
+        static void AfterEverythingLoaded(IntPtr app)
         {
             using (HookRuntimeInfo.Handle)
             {
@@ -153,10 +182,10 @@ namespace TypeTreeDumper
                 method.Invoke(app);
             }
 
-            HandleAfterEverythingLoaded();
+            HandleEngineInitialization();
         }
 
-        void HandleAfterEverythingLoaded()
+        static void HandleEngineInitialization()
         {
             try
             {
@@ -173,34 +202,5 @@ namespace TypeTreeDumper
                 Environment.Exit(0);
             }
         }
-
-        void GenerateLoaderScript()
-        {
-            var function  = Marshal.GetFunctionPointerForDelegate<Action>(HandleAfterEverythingLoaded);
-            var assetsDir = Path.Combine(ProjectPath, "Assets");
-
-            if (!Directory.Exists(assetsDir))
-                Directory.CreateDirectory(assetsDir);
-
-            var loader = string.Format(LoaderTemplate.Trim(), function.ToInt64());
-            File.WriteAllText(Path.Combine(assetsDir, "Loader.cs"), loader);
-        }
-
-        const string LoaderTemplate = @"
-using System;
-using System.IO;
-using System.Runtime.InteropServices;
-using UnityEditor;
-
-public class Loader
-{{
-    public static void Load()
-    {{
-        var ptr = new IntPtr(0x{0:X});
-        var del = Marshal.GetDelegateForFunctionPointer(ptr, typeof(Action));
-        del.DynamicInvoke();
-    }}
-}}
-";
     }
 }
