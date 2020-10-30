@@ -28,6 +28,8 @@ namespace TypeTreeDumper
 
         static LocalHook ValidateDatesHook;
 
+        static LocalHook InitializePackageManagerHook;
+
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
 
@@ -43,6 +45,9 @@ namespace TypeTreeDumper
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate IntPtr MonoStringToUTF8Delegate(IntPtr monoString);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate void InitializePackageManagerDelegate();
 
         static void AttachToParentConsole()
         {
@@ -78,6 +83,15 @@ namespace TypeTreeDumper
             {
                 AttachToParentConsole();
 
+                if (VersionInfo.FileMajorPart == 2017)
+                {
+                    if (resolver.TryResolve("?Initialize@Api@PackageManager@@IEAAXXZ", out IntPtr address))
+                    {
+                        InitializePackageManagerHook = LocalHook.Create(address, new InitializePackageManagerDelegate(InitializePackageManager), null);
+                        InitializePackageManagerHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                    }
+                }
+
                 if (VersionInfo.FileMajorPart > 3)
                 {
                     var pattern = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
@@ -111,6 +125,11 @@ namespace TypeTreeDumper
                 Console.Error.WriteLine(ex);
                 throw;
             }
+        }
+
+        static void InitializePackageManager()
+        {
+            // Stubbed
         }
 
         static ProcessModule FindProcessModule(Regex regex)
