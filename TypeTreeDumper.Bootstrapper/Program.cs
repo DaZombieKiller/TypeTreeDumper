@@ -14,8 +14,9 @@ namespace TypeTreeDumper
         static void Main(string[] args)
         {
             if (args.Length == 0)
-                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b7\Editor\Unity.exe" };
+                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b8\Editor\Unity.exe" };
 
+            var version          = FileVersionInfo.GetVersionInfo(args[0]);
             var projectDirectory = Path.GetFullPath("DummyProject");
             var commandLineArgs  = new List<string>
             {
@@ -23,6 +24,9 @@ namespace TypeTreeDumper
                 "-batchmode",
                 "-logFile", Path.Combine(Environment.CurrentDirectory, "Log.txt")
             };
+
+            if (version.FileMajorPart >= 2018)
+                commandLineArgs.Add("-noUpm");
 
             commandLineArgs.Add(Directory.Exists(projectDirectory) ? "-projectPath" : "-createProject");
             commandLineArgs.Add(projectDirectory);
