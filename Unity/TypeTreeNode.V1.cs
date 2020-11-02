@@ -7,52 +7,45 @@ namespace Unity
     {
         internal unsafe class V1 : ITypeTreeNodeImpl
         {
-            internal TypeTreeNode Node;
+            public short Version { get; private set; }
 
-            public short Version => Node.Version;
+            public byte Level { get; private set; }
 
-            public byte Level => Node.Level;
+            public TypeFlags TypeFlags { get; private set; }
 
-            public TypeFlags TypeFlags => Node.TypeFlags;
+            public uint TypeStrOffset { get; private set; }
 
-            public uint TypeStrOffset => Node.TypeStrOffset;
+            public uint NameStrOffset { get; private set; }
 
-            public uint NameStrOffset => Node.NameStrOffset;
+            public int ByteSize { get; private set; }
 
-            public int ByteSize => Node.ByteSize;
+            public int Index { get; private set; }
 
-            public int Index => Node.Index;
+            public TransferMetaFlags MetaFlag { get; private set; }
 
-            public TransferMetaFlags MetaFlag => Node.MetaFlag;
-
-            internal V1(TypeTreeNode node)
+            internal V1(
+                short version,
+                byte level,
+                TypeFlags typeFlags,
+                uint typeStrOffset,
+                uint nameStrOffset,
+                int byteSize,
+                int index,
+                TransferMetaFlags metaFlag)
             {
-                Node = node;
-            }
-
-            public V1(IntPtr address)
-            {
-                if (address == IntPtr.Zero)
-                    throw new ArgumentNullException(nameof(address));
-
-                Node = *(TypeTreeNode*)address;
+                Version = version;
+                Level = level;
+                TypeFlags = typeFlags;
+                TypeStrOffset = typeStrOffset;
+                NameStrOffset = nameStrOffset;
+                ByteSize = byteSize;
+                Index = index;
+                MetaFlag = metaFlag;
             }
 
             public ref byte GetPinnableReference()
             {
-                return ref Unsafe.As<TypeTreeNode, byte>(ref Node);
-            }
-
-            internal struct TypeTreeNode
-            {
-                public short Version;
-                public byte Level;
-                public TypeFlags TypeFlags;
-                public uint TypeStrOffset;
-                public uint NameStrOffset;
-                public int ByteSize;
-                public int Index;
-                public TransferMetaFlags MetaFlag;
+                throw new NotImplementedException();
             }
         }
     }

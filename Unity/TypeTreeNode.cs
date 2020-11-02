@@ -42,7 +42,7 @@ namespace Unity
             if (version >= UnityVersion.Unity2019_1)
                 node = new V2019_1(address);
             else
-                node = new V1(address);
+                node = new V5_0(address);
         }
 
         internal interface ITypeTreeNodeImpl
