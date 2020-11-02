@@ -10,11 +10,11 @@ namespace Unity
 
         readonly ITypeTreeImpl tree;
 
-        private byte[] m_StringBuffer;
-
         public TypeTree(UnityVersion version, CommonString strings, SymbolResolver resolver)
         {
-            if (version < UnityVersion.Unity5_3)
+            if (version < UnityVersion.Unity5_0)
+                tree = new V1(this, resolver);
+            else if (version < UnityVersion.Unity5_3)
                 tree = new V5_0(this, resolver);
             else if (version < UnityVersion.Unity2019_1)
                 tree = new V5_3(this, resolver);
@@ -36,26 +36,28 @@ namespace Unity
             if (offset > int.MaxValue)
                 return Marshal.PtrToStringAnsi(IntPtr.Add(strings.BufferBegin, (int)(int.MaxValue & offset)));
 
-            return Marshal.PtrToStringAnsi(new IntPtr(tree.StringBuffer.Ptr + offset));
+            string str = "";
+            for(int i = (int)offset; tree.StringBuffer[i] != 0; i++)
+            {
+                str += (char)tree.StringBuffer[i];
+            }
+            return str;
         }
 
         public void CreateNodes()
         {
             tree.CreateNodes(this);
-            m_StringBuffer = new byte[tree.StringBuffer.Size];
-            fixed (byte* destination = m_StringBuffer)
-                Buffer.MemoryCopy(tree.StringBuffer.Ptr, destination, m_StringBuffer.Length, m_StringBuffer.Length);
         }
 
         public TypeTreeNode this[int index] => tree.Nodes[index];
 
         public int Count => tree.Nodes.Count;
 
-        public IReadOnlyList<byte> StringBuffer => m_StringBuffer;
+        public IReadOnlyList<byte> StringBuffer => tree.StringBuffer;
 
         interface ITypeTreeImpl
         {
-            DynamicArray<byte> StringBuffer { get; }
+            IReadOnlyList<byte> StringBuffer { get; }
             IReadOnlyList<TypeTreeNode> Nodes { get; }
             ref byte GetPinnableReference();
             void CreateNodes(TypeTree tree);

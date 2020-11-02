@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Unity
 {
@@ -10,12 +13,31 @@ namespace Unity
         public ulong Capacity;
     }
 
-    unsafe struct DynamicArray<T>
+    unsafe struct DynamicArray<T> : IReadOnlyList<T>
         where T : unmanaged
     {
         public T* Ptr;
         public MemLabelId Label;
         public ulong Size;
         public ulong Capacity;
+
+        public T this[int index] => Ptr[index];
+
+        public int Count => (int)Size;
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            var arr = new T[Count];
+            for(int i = 0; i < Count; i++)
+            {
+                arr[i] = Ptr[i];
+            }
+            return arr.AsEnumerable().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
     }
 }

@@ -12,7 +12,7 @@ namespace Unity
         {
             internal TypeTree Tree;
 
-            public DynamicArray<byte> StringBuffer => Tree.Data->StringBuffer;
+            public IReadOnlyList<byte> StringBuffer => Tree.Data->StringBuffer;
 
             public IReadOnlyList<TypeTreeNode> Nodes => m_Nodes;
 

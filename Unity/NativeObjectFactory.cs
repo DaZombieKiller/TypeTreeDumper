@@ -64,12 +64,25 @@ namespace Unity
             this.resolver = resolver;
             if(HasGetSpriteAtlasDatabase) s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>("?GetSpriteAtlasDatabase@@YAAEAVSpriteAtlasDatabase@@XZ");
             if(HasGetSceneVisibilityState) s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>("?GetSceneVisibilityState@@YAAEAVSceneVisibilityState@@XZ");
-            resolver.TryResolveFunction("?GetInspectorExpandedState@@YAAEAVInspectorExpandedState@@XZ", out s_GetInspectorExpandedState);
-            resolver.TryResolveFunction("?GetAnnotationManager@@YAAEAVAnnotationManager@@XZ", out s_GetAnnotationManager);
-            s_GetMonoManager = resolver.ResolveFunction<GetMonoManagerDelegate>("?GetMonoManager@@YAAEAVMonoManager@@XZ", "?GetMonoManager@@YAAAVMonoManager@@XZ");
+            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>(
+                "?GetInspectorExpandedState@@YAAEAVInspectorExpandedState@@XZ",
+                "?GetInspectorExpandedState@@YAAAVInspectorExpandedState@@XZ");
+            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>(
+                "?GetInspectorExpandedState@@YAAEAVInspectorExpandedState@@XZ",
+                "?GetInspectorExpandedState@@YAAAVInspectorExpandedState@@XZ");
+            s_GetAnnotationManager = resolver.ResolveFunction<GetAnnotationManagerDelegate>(
+                "?GetAnnotationManager@@YAAEAVAnnotationManager@@XZ",
+                "?GetAnnotationManager@@YAAAVAnnotationManager@@XZ");
+            s_GetMonoManager = resolver.ResolveFunction<GetMonoManagerDelegate>(
+                "?GetMonoManager@@YAAEAVMonoManager@@XZ",
+                "?GetMonoManager@@YAAAVMonoManager@@XZ");
             if (version < UnityVersion.Unity5_5)
             {
-                s_ProduceV1 = resolver.ResolveFunction<ProduceDelegateV1>("?Produce@Object@@SAPEAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z", "?Produce@Object@@SAPAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z");
+                s_ProduceV1 = resolver.ResolveFunction<ProduceDelegateV1>(
+                    "?Produce@Object@@SAPEAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z",
+                    "?Produce@Object@@SAPAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z",
+                    "?Produce@Object@@SAPAV1@HHPAVBaseAllocator@@W4ObjectCreationMode@@@Z"
+                    );
             }
             else if(version < UnityVersion.Unity2017_2)
             {

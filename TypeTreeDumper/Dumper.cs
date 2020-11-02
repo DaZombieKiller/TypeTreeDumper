@@ -15,7 +15,10 @@ namespace TypeTreeDumper
             OutputDirectory = outputDirectory;
             Console.WriteLine($"Starting export. UnityVersion {engine.Version}.");
             Directory.CreateDirectory(OutputDirectory);
-            ExportStringData(engine.CommonString);
+            if (engine.Version >= UnityVersion.Unity5_0)
+            {
+                ExportStringData(engine.CommonString);
+            }
             ExportClassesJson(engine.RuntimeTypes);
             ExportRTTI(engine.RuntimeTypes);
             ExportStructDump(engine);
