@@ -12,7 +12,7 @@ namespace Unity
         {
             internal TypeTree Tree;
 
-            public DynamicArray<byte> StringBuffer => Tree.StringBuffer;
+            public IReadOnlyList<byte> StringBuffer => Tree.StringBuffer;
 
             public IReadOnlyList<TypeTreeNode> Nodes => m_Nodes;
 
@@ -37,14 +37,14 @@ namespace Unity
                 var nodes = new TypeTreeNode[Tree.Nodes.Size];
 
                 for (int i = 0; i < nodes.Length; i++)
-                    nodes[i] = new TypeTreeNode(new TypeTreeNode.V1(Tree.Nodes.Ptr[i]), owner);
+                    nodes[i] = new TypeTreeNode(new TypeTreeNode.V5_0(Tree.Nodes.Ptr[i]), owner);
 
                 m_Nodes = nodes;
             }
 
             internal struct TypeTree
             {
-                public DynamicArray<TypeTreeNode.V1.TypeTreeNode> Nodes;
+                public DynamicArray<TypeTreeNode.V5_0.TypeTreeNode> Nodes;
                 public DynamicArray<byte> StringBuffer;
                 public DynamicArray<uint> ByteOffsets;
             }
