@@ -63,11 +63,16 @@ namespace TypeTreeDumper
         {
             try
             {
-                AttachToParentConsole();
+                VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
+
+                // Can cause 2017.1 & 2017.2 to hang, cause is currently unknown but may be
+                // related to the engine trying to attach to the package manager.
+                if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
+                    AttachToParentConsole();
+
                 OutputPath  = args.OutputPath;
                 module      = Process.GetCurrentProcess().MainModule;
                 resolver    = new DiaSymbolResolver(module);
-                VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
             }
             catch (Exception ex)
             {
@@ -81,7 +86,8 @@ namespace TypeTreeDumper
         {
             try
             {
-                AttachToParentConsole();
+                if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
+                    AttachToParentConsole();
 
                 if (VersionInfo.FileMajorPart == 2017)
                 {
