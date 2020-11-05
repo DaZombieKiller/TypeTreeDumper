@@ -63,6 +63,7 @@ namespace TypeTreeDumper
         {
             try
             {
+                module      = Process.GetCurrentProcess().MainModule;
                 VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
 
                 // Can cause 2017.1 & 2017.2 to hang, cause is currently unknown but may be
@@ -71,7 +72,6 @@ namespace TypeTreeDumper
                     AttachToParentConsole();
 
                 OutputPath  = args.OutputPath;
-                module      = Process.GetCurrentProcess().MainModule;
                 resolver    = new DiaSymbolResolver(module);
             }
             catch (Exception ex)
@@ -84,6 +84,8 @@ namespace TypeTreeDumper
         [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
         public void Run(RemoteHooking.IContext context, EntryPointArgs args)
         {
+            IntPtr address;
+
             try
             {
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
@@ -91,25 +93,21 @@ namespace TypeTreeDumper
 
                 if (VersionInfo.FileMajorPart == 2017)
                 {
-                    if (resolver.TryResolve("?Initialize@Api@PackageManager@@IEAAXXZ", out IntPtr address))
+                    if (resolver.TryResolve("?Initialize@Api@PackageManager@@IEAAXXZ", out address))
                     {
                         InitializePackageManagerHook = LocalHook.Create(address, new InitializePackageManagerDelegate(InitializePackageManager), null);
                         InitializePackageManagerHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                     }
                 }
 
-                if (VersionInfo.FileMajorPart > 3)
+                if (resolver.TryResolveFirstMatching(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
                 {
-                    var pattern = new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*");
-                    var address = resolver.ResolveFirstMatching(pattern);
                     AfterEverythingLoadedHook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
                     AfterEverythingLoadedHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
                 else
                 {
-                    // For Unity 3.x and below, we need to use the player instead of the editor due to obfuscation.
-                    var pattern = new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*");
-                    var address = resolver.ResolveFirstMatching(pattern);
+                    address = resolver.ResolveFirstMatching(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
                     PlayerInitEngineNoGraphicsHook = LocalHook.Create(address, new PlayerInitEngineNoGraphicsDelegate(PlayerInitEngineNoGraphics), null);
                     PlayerInitEngineNoGraphicsHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
@@ -117,7 +115,7 @@ namespace TypeTreeDumper
                 // Work around Unity 4.0 to 4.3 licensing bug
                 if (VersionInfo.FileMajorPart == 4 && VersionInfo.FileMinorPart <= 3)
                 {
-                    var address = resolver.Resolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z");
+                    address = resolver.Resolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z");
                     ValidateDatesHook = LocalHook.Create(address, new ValidateDatesDelegate(ValidateDates), null);
                     ValidateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }

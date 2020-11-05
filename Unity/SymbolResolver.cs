@@ -83,6 +83,41 @@ namespace Unity
             throw new UnresolvedSymbolException(string.Join(", ", names));
         }
 
+        public bool TryResolveFirstMatching(Regex regex, out IntPtr address)
+        {
+            var name = FindSymbolsMatching(regex).FirstOrDefault();
+
+            if (string.IsNullOrEmpty(name))
+            {
+                address = IntPtr.Zero;
+                return false;
+            }
+
+            address = GetAddressOrZero(name);
+            return address != IntPtr.Zero;
+        }
+
+        public unsafe bool TryResolveFirstMatching<T>(Regex regex, out T* address)
+            where T : unmanaged
+        {
+            bool success = TryResolveFirstMatching(regex, out IntPtr ptr);
+            address      = (T*)ptr;
+            return success;
+        }
+
+        public bool TryResolveFirstFunctionMatching<T>(Regex regex, out T function)
+            where T : Delegate
+        {
+            if (TryResolveFirstMatching(regex, out IntPtr address))
+            {
+                function = Marshal.GetDelegateForFunctionPointer<T>(address);
+                return true;
+            }
+
+            function = null;
+            return false;
+        }
+
         public IntPtr ResolveFirstMatching(Regex regex)
         {
             var name = FindSymbolsMatching(regex).FirstOrDefault();
