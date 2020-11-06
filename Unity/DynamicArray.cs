@@ -21,18 +21,18 @@ namespace Unity
         public ulong Size;
         public ulong Capacity;
 
-        public T this[int index] => Ptr[index];
+        T IReadOnlyList<T>.this[int index] => Ptr[index];
+
+        public ref T this[int index] => ref Ptr[index];
+
+        public ref T this[ulong index] => ref Ptr[index];
 
         public int Count => (int)Size;
 
         public IEnumerator<T> GetEnumerator()
         {
-            var arr = new T[Count];
-            for(int i = 0; i < Count; i++)
-            {
-                arr[i] = Ptr[i];
-            }
-            return arr.AsEnumerable().GetEnumerator();
+            for (ulong i = 0; i < Size; i++)
+                yield return this[i];
         }
 
         IEnumerator IEnumerable.GetEnumerator()
