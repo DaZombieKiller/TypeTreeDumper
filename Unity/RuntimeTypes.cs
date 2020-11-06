@@ -20,6 +20,11 @@ namespace Unity
 
         public RuntimeTypeInfo this[int index] => types[index];
 
+        //The number of runtime types varies from version to version, we need a limit that is at least as 
+        //large as the largest RuntimeTypeId from version 3.4 to 5.5 so that we don't skip over any RuntimeTypes.
+        //The largest seen is version 5.4.6f3 is 1126, but MaxRuntimeTypeId is set to 2000 just in case.
+        const int MaxRuntimeTypeId = 2000;
+
         public int Count => types.Count;
 
         unsafe public RuntimeTypeArray(UnityVersion version, SymbolResolver resolver)
@@ -59,7 +64,7 @@ namespace Unity
                 }
 
                 types = new List<RuntimeTypeInfo>();
-                for(int i = 0; i < 2000; i++)
+                for(int i = 0; i < MaxRuntimeTypeId; i++)
                 {
                     var info = ClassIDToRTTI(i);
                     if(info != IntPtr.Zero)
