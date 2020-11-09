@@ -9,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="EasyHook" Version="2.7.7097" />
         <ProjectReference Include="..\Unity\Unity.csproj" />
+        <ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
     </ItemGroup>
     
     <Import Project="../Dia2Lib/Dia2Lib.props" />

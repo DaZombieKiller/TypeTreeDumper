@@ -17,7 +17,7 @@ namespace TypeTreeDumper
                 args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b8\Editor\Unity.exe" };
 
             var version          = FileVersionInfo.GetVersionInfo(args[0]);
-            var projectDirectory = Path.GetFullPath("DummyProject");
+            var projectDirectory = Path.GetFullPath("DummyProject-" + version.FileVersion);
             var commandLineArgs  = new List<string>
             {
                 "-nographics",
@@ -28,8 +28,9 @@ namespace TypeTreeDumper
             if (version.FileMajorPart == 3)
             {
                 commandLineArgs.Add("-executeMethod");
-                commandLineArgs.Add("Loader.Load");
+                commandLineArgs.Add(string.Join(".", typeof(FallbackLoader).FullName, nameof(FallbackLoader.Initialize)));
             }
+
             if (version.FileMajorPart >= 2018)
                 commandLineArgs.Add("-noUpm");
 

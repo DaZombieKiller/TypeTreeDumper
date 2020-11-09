@@ -9,6 +9,7 @@
         <PackageReference Include="EasyHook" Version="2.7.7097" />
         <PackageReference Include="System.Management" Version="5.0.0-preview.8.20407.11" />
         <ProjectReference Include="..\TypeTreeDumper\TypeTreeDumper.csproj" />
+        <ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
     </ItemGroup>
 
     <ItemGroup>

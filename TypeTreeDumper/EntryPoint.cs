@@ -32,7 +32,7 @@ namespace TypeTreeDumper
 
         static LocalHook InitializePackageManagerHook;
 
-        Action LegacyHandleEngineLoadCallback;
+        static FallbackLoader.CallbackDelegate FallbackLoaderCallback;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
@@ -105,9 +105,9 @@ namespace TypeTreeDumper
                     }
                 }
 
-                if(VersionInfo.FileMajorPart == 3)
+                if (VersionInfo.FileMajorPart == 3)
                 {
-                    GenerateLoaderScript();
+                    InitializeFallbackLoader();
                 }
                 else if (resolver.TryResolveFirstMatching(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
                 {
@@ -234,35 +234,19 @@ namespace TypeTreeDumper
             }
         }
 
-        void GenerateLoaderScript()
+        void InitializeFallbackLoader()
         {
-            Console.WriteLine("Generating loader script");
-            //Save delegate to prevent pointer pointer from being garbage collected
-            LegacyHandleEngineLoadCallback = new Action(HandleEngineInitialization);
-            var function = Marshal.GetFunctionPointerForDelegate<Action>(LegacyHandleEngineLoadCallback);
-            var assetsDir = Path.Combine(ProjectPath, "Assets");
+            Console.WriteLine("Initializing fallback loader...");
+            FallbackLoaderCallback = new FallbackLoader.CallbackDelegate(HandleEngineInitialization);
+            var source      = typeof(FallbackLoader).Assembly.Location;
+            var destination = Path.Combine(ProjectPath, "Assets");
+            var address     = Marshal.GetFunctionPointerForDelegate(FallbackLoaderCallback).ToInt64();
 
-            if (!Directory.Exists(assetsDir))
-                Directory.CreateDirectory(assetsDir);
+            if (!Directory.Exists(destination))
+                Directory.CreateDirectory(destination);
 
-            var loader = string.Format(LoaderTemplate.Trim(), function.ToInt64());
-            File.WriteAllText(Path.Combine(assetsDir, "Loader.cs"), loader);
+            File.Copy(source, Path.Combine(destination, Path.GetFileName(source)), overwrite: true);
+            Environment.SetEnvironmentVariable(FallbackLoader.CallbackAddressName, address.ToString());
         }
-
-        const string LoaderTemplate = @"	
-using System;	
-using System.IO;	
-using System.Runtime.InteropServices;	
-using UnityEditor;	
-public class Loader	
-{{	
-    public static void Load()	
-    {{	
-        var ptr = new IntPtr(0x{0:X});	
-        var del = Marshal.GetDelegateForFunctionPointer(ptr, typeof(Action));	
-        del.DynamicInvoke();	
-    }}	
-}}	
-";
     }
 }
