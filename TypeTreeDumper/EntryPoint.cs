@@ -20,6 +20,8 @@ namespace TypeTreeDumper
 
         static string OutputPath;
 
+        static string ProjectPath;
+
         static FileVersionInfo VersionInfo;
 
         static LocalHook AfterEverythingLoadedHook;
@@ -29,6 +31,8 @@ namespace TypeTreeDumper
         static LocalHook ValidateDatesHook;
 
         static LocalHook InitializePackageManagerHook;
+
+        Action LegacyHandleEngineLoadCallback;
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
         delegate void AfterEverythingLoadedDelegate(IntPtr app);
@@ -63,7 +67,7 @@ namespace TypeTreeDumper
         {
             try
             {
-                module      = Process.GetCurrentProcess().MainModule;
+                module = Process.GetCurrentProcess().MainModule;
                 VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
 
                 // Can cause 2017.1 & 2017.2 to hang, cause is currently unknown but may be
@@ -71,8 +75,9 @@ namespace TypeTreeDumper
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
                     AttachToParentConsole();
 
-                OutputPath  = args.OutputPath;
-                resolver    = new DiaSymbolResolver(module);
+                OutputPath = args.OutputPath;
+                ProjectPath = args.ProjectPath;
+                resolver = new DiaSymbolResolver(module);
             }
             catch (Exception ex)
             {
@@ -100,7 +105,11 @@ namespace TypeTreeDumper
                     }
                 }
 
-                if (resolver.TryResolveFirstMatching(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
+                if(VersionInfo.FileMajorPart == 3)
+                {
+                    GenerateLoaderScript();
+                }
+                else if (resolver.TryResolveFirstMatching(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
                 {
                     AfterEverythingLoadedHook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
                     AfterEverythingLoadedHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
@@ -166,9 +175,9 @@ namespace TypeTreeDumper
                     "?Application_Get_Custom_PropUnityVersion@@YAPEAVScriptingBackendNativeStringPtrOpaque@@XZ"
                 );
 
-                var mono             = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
+                var mono = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
                 var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
-                version              = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
+                version = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }
 
             Dumper.Execute(new UnityEngine(version, resolver), OutputPath);
@@ -204,7 +213,6 @@ namespace TypeTreeDumper
                 var method = Marshal.GetDelegateForFunctionPointer<AfterEverythingLoadedDelegate>(bypass);
                 method.Invoke(app);
             }
-
             HandleEngineInitialization();
         }
 
@@ -225,5 +233,36 @@ namespace TypeTreeDumper
                 Environment.Exit(0);
             }
         }
+
+        void GenerateLoaderScript()
+        {
+            Console.WriteLine("Generating loader script");
+            //Save delegate to prevent pointer pointer from being garbage collected
+            LegacyHandleEngineLoadCallback = new Action(HandleEngineInitialization);
+            var function = Marshal.GetFunctionPointerForDelegate<Action>(LegacyHandleEngineLoadCallback);
+            var assetsDir = Path.Combine(ProjectPath, "Assets");
+
+            if (!Directory.Exists(assetsDir))
+                Directory.CreateDirectory(assetsDir);
+
+            var loader = string.Format(LoaderTemplate.Trim(), function.ToInt64());
+            File.WriteAllText(Path.Combine(assetsDir, "Loader.cs"), loader);
+        }
+
+        const string LoaderTemplate = @"	
+using System;	
+using System.IO;	
+using System.Runtime.InteropServices;	
+using UnityEditor;	
+public class Loader	
+{{	
+    public static void Load()	
+    {{	
+        var ptr = new IntPtr(0x{0:X});	
+        var del = Marshal.GetDelegateForFunctionPointer(ptr, typeof(Action));	
+        del.DynamicInvoke();	
+    }}	
+}}	
+";
     }
 }
