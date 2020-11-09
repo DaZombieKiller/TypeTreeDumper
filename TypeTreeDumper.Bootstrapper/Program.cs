@@ -25,6 +25,11 @@ namespace TypeTreeDumper
                 "-logFile", Path.Combine(Environment.CurrentDirectory, "Log.txt")
             };
 
+            if (version.FileMajorPart == 3)
+            {
+                commandLineArgs.Add("-executeMethod");
+                commandLineArgs.Add("Loader.Load");
+            }
             if (version.FileMajorPart >= 2018)
                 commandLineArgs.Add("-noUpm");
 

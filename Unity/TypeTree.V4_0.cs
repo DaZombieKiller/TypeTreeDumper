@@ -5,12 +5,13 @@ using ManagedTypeTree = Unity.TypeTree;
 using System;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.IO;
 
 namespace Unity
 {
     public partial class TypeTree
     {
-        unsafe class V1 : ITypeTreeImpl
+        unsafe class V4_0 : ITypeTreeImpl
         {
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
             delegate void TypeTreeDelegate(out TypeTree tree);
@@ -31,8 +32,9 @@ namespace Unity
 
             private Dictionary<string, uint> m_StringBufferIndices;
 
+            private StreamWriter sw;
 
-            public V1(ManagedTypeTree owner, SymbolResolver resolver)
+            public V4_0(ManagedTypeTree owner, SymbolResolver resolver)
             {
                 var constructor = resolver.ResolveFunction<TypeTreeDelegate>("??0TypeTree@@QAE@XZ");
                 constructor.Invoke(out Tree);
@@ -48,10 +50,14 @@ namespace Unity
 
             public void CreateNodes(ManagedTypeTree owner)
             {
+                //Debugger.Launch();
                 m_StringBuffer = new List<byte>();
                 m_StringBufferIndices = new Dictionary<string, uint>();
                 m_Nodes = new List<TypeTreeNode>();
+                var type = Marshal.PtrToStringAnsi(s_CStr(ref Tree.m_Type));
+                sw = new StreamWriter($"{type}.txt");
                 CreateNodes(owner, ref m_Nodes, ref Tree);
+                sw.Dispose();
             }
 
             public void CreateNodes(ManagedTypeTree owner, ref List<TypeTreeNode> nodes, ref TypeTree tree, int level = 0)
@@ -70,7 +76,13 @@ namespace Unity
                     index: tree.m_Index,
                     metaFlag: tree.m_MetaFlag);
                 nodes.Add(new TypeTreeNode(nodeImpl, owner));
-
+                sw.WriteLine("{0}Type: {1} Name: {2}: Children: {3} Padding1: {4} Padding2: {5}",
+                    new string(' ', level),
+                    type,
+                    name,
+                    tree.m_Children.Size,
+                    tree.m_Children.Padding1,
+                    tree.m_Children.Padding2);
                 var node = tree.m_Children.Head;
                 for(int i = 0; i < tree.m_Children.Size; i++)
                 {
@@ -101,15 +113,15 @@ namespace Unity
             internal struct TypeTreeString
             {
                 [FieldOffset(0)]
-                public uint Unknown;
-                [FieldOffset(4)]
                 fixed byte Buffer[16];
-                [FieldOffset(4)]
+                [FieldOffset(0)]
                 IntPtr Ptr;
+                [FieldOffset(16)]
+                uint Size;
                 [FieldOffset(20)]
-                public uint Size;
+                uint Reserved;
                 [FieldOffset(24)]
-                public uint Reserved;
+                uint Padding;
 
                 public override string ToString()
                 {
@@ -130,11 +142,10 @@ namespace Unity
 
             internal unsafe struct TypeTreeList
             {
-                public uint Unknown1;
-                public uint Unknown2;
-                public uint Unknown3;
                 public TypeTreeListNode* Head;
-                public int Size;
+                public uint Size;
+                public int Padding1;
+                public int Padding2;
             };
 
             internal unsafe struct TypeTreeListNode
