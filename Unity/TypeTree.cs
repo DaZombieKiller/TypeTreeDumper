@@ -12,8 +12,10 @@ namespace Unity
 
         public TypeTree(UnityVersion version, CommonString strings, SymbolResolver resolver)
         {
-            if (version < UnityVersion.Unity4_0)
-                tree = new V1(this, resolver);
+            if (version < UnityVersion.Unity3_5)
+                tree = new V3_4(this, resolver);
+            else if (version < UnityVersion.Unity4_0)
+                tree = new V3_5(this, resolver);
             else if (version < UnityVersion.Unity5_0)
                 tree = new V4_0(this, resolver);
             else if (version < UnityVersion.Unity5_3)
