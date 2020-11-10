@@ -10,7 +10,7 @@ namespace Unity
 {
     public partial class TypeTree
     {
-        unsafe class V1 : ITypeTreeImpl
+        unsafe class V3_4 : ITypeTreeImpl
         {
             [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
             delegate void TypeTreeDelegate(out TypeTree tree);
@@ -32,7 +32,7 @@ namespace Unity
             private Dictionary<string, uint> m_StringBufferIndices;
 
 
-            public V1(ManagedTypeTree owner, SymbolResolver resolver)
+            public V3_4(ManagedTypeTree owner, SymbolResolver resolver)
             {
                 var constructor = resolver.ResolveFunction<TypeTreeDelegate>("??0TypeTree@@QAE@XZ");
                 constructor.Invoke(out Tree);
@@ -131,8 +131,6 @@ namespace Unity
             internal unsafe struct TypeTreeList
             {
                 public uint Unknown1;
-                public uint Unknown2;
-                public uint Unknown3;
                 public TypeTreeListNode* Head;
                 public int Size;
             };

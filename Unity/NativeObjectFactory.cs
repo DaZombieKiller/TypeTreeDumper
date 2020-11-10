@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Unity
@@ -30,9 +31,13 @@ namespace Unity
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate IntPtr GetMonoManagerDelegate();
 
-        readonly ProduceDelegateV1 s_ProduceV1;
+        readonly ProduceDelegateV3_4 s_ProduceV3_4;
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr ProduceDelegateV1(int classID, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
+        delegate IntPtr ProduceDelegateV3_4(int classID, int instanceID, IntPtr baseAllocator, ObjectCreationMode creationMode);
+
+        readonly ProduceDelegateV3_5 s_ProduceV3_5;
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        delegate IntPtr ProduceDelegateV3_5(int classID, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
 
         readonly ProduceDelegateV5_5 s_ProduceV5_5;
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -78,10 +83,13 @@ namespace Unity
                 "?GetMonoManager@@YAAAVMonoManager@@XZ");
             if (version < UnityVersion.Unity5_5)
             {
-                s_ProduceV1 = resolver.ResolveFunction<ProduceDelegateV1>(
+                s_ProduceV3_4 = resolver.ResolveFunction<ProduceDelegateV3_4>("?Produce@Object@@SAPAV1@HHPAVBaseAllocator@@W4ObjectCreationMode@@@Z");
+            }
+            else if (version < UnityVersion.Unity5_5)
+            {
+                s_ProduceV3_5 = resolver.ResolveFunction<ProduceDelegateV3_5>(
                     "?Produce@Object@@SAPEAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z",
-                    "?Produce@Object@@SAPAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z",
-                    "?Produce@Object@@SAPAV1@HHPAVBaseAllocator@@W4ObjectCreationMode@@@Z"
+                    "?Produce@Object@@SAPAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z"
                     );
             }
             else if(version < UnityVersion.Unity2017_2)
@@ -110,9 +118,12 @@ namespace Unity
                 s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>("?EditorUtility_CUSTOM_InstanceIDToObject@@YAPEAVScriptingBackendNativeObjectPtrOpaque@@H@Z");
                 s_DestroyImmediate = resolver.ResolveFunction<DestroyImmediateDelegate>("?Object_CUSTOM_DestroyImmediate@@YAXPEAVScriptingBackendNativeObjectPtrOpaque@@E@Z");
             }
-            kMemBaseObject = resolver.Resolve<MemLabelId>(
-                "?kMemBaseObject@@3UMemLabelId@@A",
-                "?kMemBaseObject@@3UkMemBaseObjectStruct@@A");
+            if (version >= UnityVersion.Unity3_5)
+            {
+                kMemBaseObject = resolver.Resolve<MemLabelId>(
+                    "?kMemBaseObject@@3UMemLabelId@@A",
+                    "?kMemBaseObject@@3UkMemBaseObjectStruct@@A");
+            }
         }
 
         public NativeObject GetSpriteAtlasDatabase()
@@ -155,9 +166,13 @@ namespace Unity
                 return null;
 
             IntPtr ptr;
-            if (version < UnityVersion.Unity5_5)
+            if (version < UnityVersion.Unity3_5)
             {
-                ptr = s_ProduceV1((int)type.PersistentTypeID, instanceID, *kMemBaseObject, creationMode);
+                ptr = s_ProduceV3_4((int)type.PersistentTypeID, instanceID, IntPtr.Zero, creationMode);
+            }
+            else if (version < UnityVersion.Unity5_5)
+            {
+                ptr = s_ProduceV3_5((int)type.PersistentTypeID, instanceID, *kMemBaseObject, creationMode);
             }
             else if (version < UnityVersion.Unity2017_2)
             {
