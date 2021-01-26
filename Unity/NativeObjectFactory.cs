@@ -69,10 +69,10 @@ namespace Unity
             this.resolver = resolver;
             
             if (HasGetSpriteAtlasDatabase)
-                s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>("?GetSpriteAtlasDatabase@@YAAEAVSpriteAtlasDatabase@@XZ");
+                s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>($"?GetSpriteAtlasDatabase@@YAA{NameMangling.Ptr64}AVSpriteAtlasDatabase@@XZ");
 
             if (HasGetSceneVisibilityState)
-                s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>("?GetSceneVisibilityState@@YAAEAVSceneVisibilityState@@XZ");
+                s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>($"?GetSceneVisibilityState@@YAA{NameMangling.Ptr64}AVSceneVisibilityState@@XZ");
 
             s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
             s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
