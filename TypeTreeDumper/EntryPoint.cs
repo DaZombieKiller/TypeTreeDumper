@@ -164,7 +164,11 @@ namespace TypeTreeDumper
 
             if (resolver.TryResolveFunction($"?GameEngineVersion@PlatformWrapper@UnityEngine@@SAP{NameMangling.Ptr64}BDXZ", out GetUnityVersion))
             {
-                var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>($"??0UnityVersion@@Q{NameMangling.Ptr64}AA@P{NameMangling.Ptr64}BD@Z");
+                var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>(
+                    $"??0UnityVersion@@Q{NameMangling.Ptr64}AA@P{NameMangling.Ptr64}BD@Z",
+                    $"??0UnityVersion@@QAE@P{NameMangling.Ptr64}BD@Z"
+                );
+
                 ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
             }
             else
