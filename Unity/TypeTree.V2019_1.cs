@@ -14,6 +14,8 @@ namespace Unity
 
             public IReadOnlyList<byte> StringBuffer => Tree.Data->StringBuffer;
 
+            public IReadOnlyList<uint> ByteOffsets => Tree.Data->ByteOffsets;
+
             public IReadOnlyList<TypeTreeNode> Nodes => m_Nodes;
 
             private TypeTreeNode[] m_Nodes;
@@ -23,7 +25,7 @@ namespace Unity
 
             public V2019_1(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = resolver.ResolveFunction<TypeTreeDelegate>("??0TypeTree@@QEAA@AEBUMemLabelId@@_N@Z");
+                var constructor = resolver.ResolveFunction<TypeTreeDelegate>($"??0TypeTree@@Q{NameMangling.Ptr64}AA@A{NameMangling.Ptr64}BUMemLabelId@@_N@Z");
                 var label = resolver.Resolve<MemLabelId>("?kMemTypeTree@@3UMemLabelId@@A");
                 constructor.Invoke(out Tree, label, allocatePrivateData: false);
             }

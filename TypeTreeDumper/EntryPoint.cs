@@ -98,7 +98,7 @@ namespace TypeTreeDumper
 
                 if (VersionInfo.FileMajorPart == 2017)
                 {
-                    if (resolver.TryResolve("?Initialize@Api@PackageManager@@IEAAXXZ", out address))
+                    if (resolver.TryResolve($"?Initialize@Api@PackageManager@@I{NameMangling.Ptr64}AAXXZ", out address))
                     {
                         InitializePackageManagerHook = LocalHook.Create(address, new InitializePackageManagerDelegate(InitializePackageManager), null);
                         InitializePackageManagerHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
@@ -124,7 +124,7 @@ namespace TypeTreeDumper
                 // Work around Unity 4.0 to 4.3 licensing bug
                 if (VersionInfo.FileMajorPart == 4 && VersionInfo.FileMinorPart <= 3)
                 {
-                    address = resolver.Resolve("?ValidateDates@LicenseManager@@QAEHPAVDOMDocument@xercesc_3_1@@@Z");
+                    address = resolver.Resolve($"?ValidateDates@LicenseManager@@QAEHP{NameMangling.Ptr64}AVDOMDocument@xercesc_3_1@@@Z");
                     ValidateDatesHook = LocalHook.Create(address, new ValidateDatesDelegate(ValidateDates), null);
                     ValidateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
@@ -162,17 +162,16 @@ namespace TypeTreeDumper
             UnityVersion version;
             GetUnityVersionDelegate GetUnityVersion;
 
-            if (resolver.TryResolveFunction("?GameEngineVersion@PlatformWrapper@UnityEngine@@SAPEBDXZ", out GetUnityVersion))
+            if (resolver.TryResolveFunction($"?GameEngineVersion@PlatformWrapper@UnityEngine@@SAP{NameMangling.Ptr64}BDXZ", out GetUnityVersion))
             {
-                var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>("??0UnityVersion@@QEAA@PEBD@Z");
+                var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>($"??0UnityVersion@@Q{NameMangling.Ptr64}AA@P{NameMangling.Ptr64}BD@Z");
                 ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
             }
             else
             {
                 GetUnityVersion = resolver.ResolveFunction<GetUnityVersionDelegate>(
-                    "?Application_Get_Custom_PropUnityVersion@@YAPAUMonoString@@XZ",
-                    "?Application_Get_Custom_PropUnityVersion@@YAPEAUMonoString@@XZ",
-                    "?Application_Get_Custom_PropUnityVersion@@YAPEAVScriptingBackendNativeStringPtrOpaque@@XZ"
+                    $"?Application_Get_Custom_PropUnityVersion@@YAP{NameMangling.Ptr64}AUMonoString@@XZ",
+                    $"?Application_Get_Custom_PropUnityVersion@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeStringPtrOpaque@@XZ"
                 );
 
                 var mono = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;

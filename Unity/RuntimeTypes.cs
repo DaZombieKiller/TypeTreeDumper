@@ -51,17 +51,13 @@ namespace Unity
             else 
             {
                 ClassIDToRTTI ClassIDToRTTI;
-                if(version >= UnityVersion.Unity5_4)
-                {
-                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>("?ClassIDToRTTI@Object@@SAPEAURTTI@@H@Z");
-                }
+
+                if (version >= UnityVersion.Unity5_4)
+                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@@H@Z");
                 else if (version >= UnityVersion.Unity5_0)
-                {
-                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>("?ClassIDToRTTI@Object@@SAPEAURTTI@1@H@Z");
-                } else
-                {
-                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>("?ClassIDToRTTI@Object@@SAPAURTTI@1@H@Z");
-                }
+                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@1@H@Z");
+                else
+                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@1@H@Z");
 
                 types = new List<RuntimeTypeInfo>();
                 for(int i = 0; i < MaxRuntimeTypeId; i++)

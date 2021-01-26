@@ -26,6 +26,10 @@ namespace Unity
 
             public IReadOnlyList<TypeTreeNode> Nodes => m_Nodes;
 
+            public IReadOnlyList<uint> ByteOffsets => m_ByteOffsets;
+
+            private List<uint> m_ByteOffsets;
+
             private List<TypeTreeNode> m_Nodes;
 
             private List<byte> m_StringBuffer;
@@ -54,6 +58,7 @@ namespace Unity
                 m_StringBuffer = new List<byte>();
                 m_StringBufferIndices = new Dictionary<string, uint>();
                 m_Nodes = new List<TypeTreeNode>();
+                m_ByteOffsets = new List<uint>();
                 var type = Marshal.PtrToStringAnsi(s_CStr(ref Tree.m_Type));
                 sw = new StreamWriter($"{type}.txt");
                 CreateNodes(owner, ref m_Nodes, ref Tree);
@@ -76,6 +81,7 @@ namespace Unity
                     index: tree.m_Index,
                     metaFlag: tree.m_MetaFlag);
                 nodes.Add(new TypeTreeNode(nodeImpl, owner));
+                m_ByteOffsets.Add((uint)tree.m_ByteOffset);
                 sw.WriteLine("{0}Type: {1} Name: {2}: Children: {3} Padding1: {4} Padding2: {5}",
                     new string(' ', level),
                     type,

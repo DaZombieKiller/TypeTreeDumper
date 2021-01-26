@@ -65,64 +65,53 @@ namespace Unity
 
         public NativeObjectFactory(UnityVersion version, SymbolResolver resolver)
         {
-            this.version = version;
+            this.version  = version;
             this.resolver = resolver;
-            if(HasGetSpriteAtlasDatabase) s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>("?GetSpriteAtlasDatabase@@YAAEAVSpriteAtlasDatabase@@XZ");
-            if(HasGetSceneVisibilityState) s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>("?GetSceneVisibilityState@@YAAEAVSceneVisibilityState@@XZ");
-            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>(
-                "?GetInspectorExpandedState@@YAAEAVInspectorExpandedState@@XZ",
-                "?GetInspectorExpandedState@@YAAAVInspectorExpandedState@@XZ");
-            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>(
-                "?GetInspectorExpandedState@@YAAEAVInspectorExpandedState@@XZ",
-                "?GetInspectorExpandedState@@YAAAVInspectorExpandedState@@XZ");
-            s_GetAnnotationManager = resolver.ResolveFunction<GetAnnotationManagerDelegate>(
-                "?GetAnnotationManager@@YAAEAVAnnotationManager@@XZ",
-                "?GetAnnotationManager@@YAAAVAnnotationManager@@XZ");
-            s_GetMonoManager = resolver.ResolveFunction<GetMonoManagerDelegate>(
-                "?GetMonoManager@@YAAEAVMonoManager@@XZ",
-                "?GetMonoManager@@YAAAVMonoManager@@XZ");
+            
+            if (HasGetSpriteAtlasDatabase)
+                s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>("?GetSpriteAtlasDatabase@@YAAEAVSpriteAtlasDatabase@@XZ");
+
+            if (HasGetSceneVisibilityState)
+                s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>("?GetSceneVisibilityState@@YAAEAVSceneVisibilityState@@XZ");
+
+            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
+            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
+            s_GetAnnotationManager      = resolver.ResolveFunction<GetAnnotationManagerDelegate>($"?GetAnnotationManager@@YAA{NameMangling.Ptr64}AVAnnotationManager@@XZ");
+            s_GetMonoManager            = resolver.ResolveFunction<GetMonoManagerDelegate>($"?GetMonoManager@@YAA{NameMangling.Ptr64}AVMonoManager@@XZ");
+
+            if (version < UnityVersion.Unity3_5)
+                s_ProduceV3_4 = resolver.ResolveFunction<ProduceDelegateV3_4>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHP{NameMangling.Ptr64}AVBaseAllocator@@W4ObjectCreationMode@@@Z");
+            else if (version < UnityVersion.Unity5_5)
+                s_ProduceV3_5 = resolver.ResolveFunction<ProduceDelegateV3_5>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z");
+            else if(version < UnityVersion.Unity2017_2)
+                s_ProduceV5_5 = resolver.ResolveFunction<ProduceDelegateV5_5>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
+            else
+                s_ProduceV2017_2 = resolver.ResolveFunction<ProduceDelegateV2017_2>($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
+
             if (version < UnityVersion.Unity5_5)
             {
-                s_ProduceV3_4 = resolver.ResolveFunction<ProduceDelegateV3_4>("?Produce@Object@@SAPAV1@HHPAVBaseAllocator@@W4ObjectCreationMode@@@Z");
-            }
-            else if (version < UnityVersion.Unity5_5)
-            {
-                s_ProduceV3_5 = resolver.ResolveFunction<ProduceDelegateV3_5>(
-                    "?Produce@Object@@SAPEAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z",
-                    "?Produce@Object@@SAPAV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z"
-                    );
-            }
-            else if(version < UnityVersion.Unity2017_2)
-            {
-                s_ProduceV5_5 = resolver.ResolveFunction<ProduceDelegateV5_5>("?Produce@Object@@SAPEAV1@PEBVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
-            }
-            else
-            {
-                s_ProduceV2017_2 = resolver.ResolveFunction<ProduceDelegateV2017_2>("?Produce@Object@@CAPEAV1@PEBVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
-            }
-
-            if(version < UnityVersion.Unity5_5)
-            {
                 s_DestroyObjectFromScriptingImmediate = resolver.ResolveFunction<DestroyObjectFromScriptingImmediateDelegate>(
-                    "?DestroyObjectFromScriptingImmediate@Scripting@@YAXPEAVObject@@_N@Z",
-                    "?DestroyObjectFromScriptingImmediate@Scripting@@YAXPAVObject@@_N@Z",
-                    "?DestroyObjectFromScriptingImmediate@@YAXPAVObject@@_N@Z");
+                    $"?DestroyObjectFromScriptingImmediate@Scripting@@YAXP{NameMangling.Ptr64}AVObject@@_N@Z",
+                    $"?DestroyObjectFromScriptingImmediate@@YAXP{NameMangling.Ptr64}AVObject@@_N@Z"
+                );
             }
             else if (version < UnityVersion.Unity2019_2)
             {
-                s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>("?EditorUtility_CUSTOM_InstanceIDToObject@@YAPEAUMonoObject@@H@Z");
-                s_DestroyImmediate = resolver.ResolveFunction<DestroyImmediateDelegate>("?Object_CUSTOM_DestroyImmediate@@YAXPEAUMonoObject@@E@Z");
+                s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AUMonoObject@@H@Z");
+                s_DestroyImmediate   = resolver.ResolveFunction<DestroyImmediateDelegate>($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z");
             }
             else
             {
-                s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>("?EditorUtility_CUSTOM_InstanceIDToObject@@YAPEAVScriptingBackendNativeObjectPtrOpaque@@H@Z");
-                s_DestroyImmediate = resolver.ResolveFunction<DestroyImmediateDelegate>("?Object_CUSTOM_DestroyImmediate@@YAXPEAVScriptingBackendNativeObjectPtrOpaque@@E@Z");
+                s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@H@Z");
+                s_DestroyImmediate   = resolver.ResolveFunction<DestroyImmediateDelegate>($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z");
             }
+
             if (version >= UnityVersion.Unity3_5)
             {
                 kMemBaseObject = resolver.Resolve<MemLabelId>(
                     "?kMemBaseObject@@3UMemLabelId@@A",
-                    "?kMemBaseObject@@3UkMemBaseObjectStruct@@A");
+                    "?kMemBaseObject@@3UkMemBaseObjectStruct@@A"
+                );
             }
         }
 

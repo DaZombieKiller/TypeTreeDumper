@@ -25,19 +25,18 @@ namespace Unity
 
         public TypeTreeFactory(UnityVersion version, CommonString strings, SymbolResolver resolver)
         {
-            this.version = version;
+            this.version  = version;
             this.resolver = resolver;
-            this.strings = strings;
+            this.strings  = strings;
+
             if (HasGetTypeTree)
-            {
-                getTypeTree = resolver.ResolveFunction<GetTypeTreeDelegate>("?GetTypeTree@TypeTreeCache@@YA_NPEBVObject@@W4TransferInstructionFlags@@AEAVTypeTree@@@Z");
-            }
+                getTypeTree = resolver.ResolveFunction<GetTypeTreeDelegate>($"?GetTypeTree@TypeTreeCache@@YA_NP{NameMangling.Ptr64}BVObject@@W4TransferInstructionFlags@@A{NameMangling.Ptr64}AVTypeTree@@@Z");
             else
             {
                 generateTypeTree = resolver.ResolveFunction<GenerateTypeTreeDelegate>(
-                    "?GenerateTypeTree@@YAXAEBVObject@@AEAVTypeTree@@W4TransferInstructionFlags@@@Z",
-                    "?GenerateTypeTree@@YAXAEAVObject@@PEAVTypeTree@@W4TransferInstructionFlags@@@Z",
-                    "?GenerateTypeTree@@YAXAAVObject@@PAVTypeTree@@H@Z"
+                    $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}BVObject@@A{NameMangling.Ptr64}AVTypeTree@@W4TransferInstructionFlags@@@Z",
+                    $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}AVObject@@P{NameMangling.Ptr64}AVTypeTree@@W4TransferInstructionFlags@@@Z",
+                    $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}AVObject@@P{NameMangling.Ptr64}AVTypeTree@@H@Z"
                 );
             }
         }

@@ -11,10 +11,10 @@ namespace Unity
 
         public CommonString(SymbolResolver resolver)
         {
-            if (resolver.TryResolve("?BufferBegin@CommonString@Unity@@3QEBDEB", out IntPtr begin))
+            if (resolver.TryResolve($"?BufferBegin@CommonString@Unity@@3Q{NameMangling.Ptr64}BD{NameMangling.Ptr64}B", out IntPtr begin))
                 BufferBegin = Marshal.ReadIntPtr(begin);
 
-            if (resolver.TryResolve("?BufferEnd@CommonString@Unity@@3QEBDEB", out IntPtr end))
+            if (resolver.TryResolve($"?BufferEnd@CommonString@Unity@@3Q{NameMangling.Ptr64}BD{NameMangling.Ptr64}B", out IntPtr end))
                 BufferEnd = Marshal.ReadIntPtr(end);
         }
     }

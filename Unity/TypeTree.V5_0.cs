@@ -16,6 +16,8 @@ namespace Unity
 
             public IReadOnlyList<TypeTreeNode> Nodes => m_Nodes;
 
+            public IReadOnlyList<uint> ByteOffsets => Tree.ByteOffsets;
+
             private TypeTreeNode[] m_Nodes;
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -23,7 +25,7 @@ namespace Unity
 
             public V5_0(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = resolver.ResolveFunction<TypeTreeDelegate>("??0TypeTree@@QEAA@XZ");
+                var constructor = resolver.ResolveFunction<TypeTreeDelegate>($"??0TypeTree@@Q{NameMangling.Ptr64}AA@XZ");
                 constructor.Invoke(out Tree);
             }
 

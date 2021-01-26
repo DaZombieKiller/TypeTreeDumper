@@ -59,10 +59,13 @@ namespace Unity
 
         public IReadOnlyList<byte> StringBuffer => tree.StringBuffer;
 
+        public IReadOnlyList<uint> ByteOffsets => tree.ByteOffsets;
+
         interface ITypeTreeImpl
         {
             IReadOnlyList<byte> StringBuffer { get; }
             IReadOnlyList<TypeTreeNode> Nodes { get; }
+            IReadOnlyList<uint> ByteOffsets { get; }
             ref byte GetPinnableReference();
             void CreateNodes(TypeTree tree);
         }
