@@ -15,6 +15,15 @@ namespace Unity
 
         public string Namespace => TypeInfo.Namespace;
 
+        public string FullName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Namespace) || string.IsNullOrEmpty(Name)) return Name;
+                else return $"{Namespace}.{Name}";
+            }
+        }
+
         public string Module => TypeInfo.Module;
 
         public PersistentTypeID PersistentTypeID => TypeInfo.PersistentTypeID;
