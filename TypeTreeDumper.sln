@@ -1,15 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31605.320
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeTreeDumper.Bootstrapper", "TypeTreeDumper.Bootstrapper\TypeTreeDumper.Bootstrapper.csproj", "{518C83DF-C74E-4AD3-8A14-B4EA9C636CF2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper.Bootstrapper", "TypeTreeDumper.Bootstrapper\TypeTreeDumper.Bootstrapper.csproj", "{518C83DF-C74E-4AD3-8A14-B4EA9C636CF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeTreeDumper", "TypeTreeDumper\TypeTreeDumper.csproj", "{CCF692AC-723D-4E90-86C8-66CDD6FD4027}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper", "TypeTreeDumper\TypeTreeDumper.csproj", "{CCF692AC-723D-4E90-86C8-66CDD6FD4027}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity", "Unity\Unity.csproj", "{42AE78A9-4BF2-4E1D-966D-08A0728A4C42}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity", "Unity\Unity.csproj", "{42AE78A9-4BF2-4E1D-966D-08A0728A4C42}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeTreeDumper.Loader", "TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj", "{3F065ACF-8723-4AAD-A916-A11621AECA96}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper.Loader", "TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj", "{3F065ACF-8723-4AAD-A916-A11621AECA96}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6ECA25EE-9149-4434-A933-287DCC7E918D}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		GenDia2Lib.bat = GenDia2Lib.bat
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,9 +27,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{518C83DF-C74E-4AD3-8A14-B4EA9C636CF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -72,5 +77,11 @@ Global
 		{3F065ACF-8723-4AAD-A916-A11621AECA96}.Release|x64.Build.0 = Release|Any CPU
 		{3F065ACF-8723-4AAD-A916-A11621AECA96}.Release|x86.ActiveCfg = Release|Any CPU
 		{3F065ACF-8723-4AAD-A916-A11621AECA96}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4547E4A0-4D20-4D9C-835D-5E7F2DB73ECC}
 	EndGlobalSection
 EndGlobal
