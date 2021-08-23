@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using Unity;
+using TypeTreeDumper.Interfaces;
 
 namespace TypeTreeDumper
 {
@@ -10,19 +11,29 @@ namespace TypeTreeDumper
     {
         static string OutputDirectory;
 
-        public static void Execute(UnityEngine engine, string outputDirectory)
+        public static void Execute(UnityEngine engine, ExportOptions options, DumperEngine dumperEngine)
         {
-            OutputDirectory = outputDirectory;
+            OutputDirectory = options.OutputDirectory;
             Console.WriteLine($"Starting export. UnityVersion {engine.Version}.");
             Directory.CreateDirectory(OutputDirectory);
-            if (engine.Version >= UnityVersion.Unity5_0)
+            if (engine.Version >= UnityVersion.Unity5_0 && options.ExportBinaryDump)
             {
                 ExportStringData(engine.CommonString);
             }
-            ExportClassesJson(engine.RuntimeTypes);
-            ExportRTTI(engine.RuntimeTypes);
-            ExportStructDump(engine);
-            ExportStructData(engine);
+            if (options.ExportClassesJson)
+            {
+                ExportClassesJson(engine.RuntimeTypes);
+            }
+            if (options.ExportTextDump)
+            {
+                ExportRTTI(engine.RuntimeTypes);
+                ExportStructDump(engine);
+            }
+            if (options.ExportBinaryDump)
+            {
+                ExportStructData(engine);
+            }
+            dumperEngine.InvokeExportCompleted(engine, options);
             Console.WriteLine("Success");
         }
 

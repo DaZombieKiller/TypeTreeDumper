@@ -129,6 +129,7 @@ namespace TypeTreeDumper
                     ValidateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
 
+                OnEngineInitialized += PluginManager.LoadPlugins;
                 OnEngineInitialized += ExecuteDumper;
                 RemoteHooking.WakeUpProcess();
                 Thread.Sleep(Timeout.Infinite);
@@ -162,6 +163,9 @@ namespace TypeTreeDumper
             UnityVersion version;
             GetUnityVersionDelegate GetUnityVersion;
 
+            DumperEngine dumperEngine = new DumperEngine();
+            PluginManager.InitializePlugins(dumperEngine);
+
             if (resolver.TryResolveFunction($"?GameEngineVersion@PlatformWrapper@UnityEngine@@SAP{NameMangling.Ptr64}BDXZ", out GetUnityVersion))
             {
                 var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>(
@@ -183,7 +187,7 @@ namespace TypeTreeDumper
                 version = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
             }
 
-            Dumper.Execute(new UnityEngine(version, resolver), OutputPath);
+            Dumper.Execute(new UnityEngine(version, resolver), new ExportOptions(OutputPath), dumperEngine);
         }
 
         [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
