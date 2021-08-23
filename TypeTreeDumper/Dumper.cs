@@ -9,13 +9,13 @@ namespace TypeTreeDumper
 {
     static class Dumper
     {
-        static string OutputDirectory;
+        static ExportOptions Options;
 
         public static void Execute(UnityEngine engine, ExportOptions options, DumperEngine dumperEngine)
         {
-            OutputDirectory = options.OutputDirectory;
+            Options = options;
             Console.WriteLine($"Starting export. UnityVersion {engine.Version}.");
-            Directory.CreateDirectory(OutputDirectory);
+            Directory.CreateDirectory(Options.OutputDirectory);
             if (engine.Version >= UnityVersion.Unity5_0 && options.ExportBinaryDump)
             {
                 ExportStringData(engine.CommonString);
@@ -40,7 +40,7 @@ namespace TypeTreeDumper
         static void ExportRTTI(RuntimeTypeArray runtimeTypes)
         {
             Console.WriteLine("Writing RTTI...");
-            using var tw = new StreamWriter(Path.Combine(OutputDirectory, "RTTI.dump"));
+            using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "RTTI.dump"));
             for (int i = 0; i < runtimeTypes.Count; i++)
             {
                 var type = runtimeTypes[i];
@@ -74,13 +74,13 @@ namespace TypeTreeDumper
             fixed (byte* destination = buffer)
                 Buffer.MemoryCopy(source, destination, length, length);
 
-            File.WriteAllBytes(Path.Combine(OutputDirectory, "strings.dat"), buffer);
+            File.WriteAllBytes(Path.Combine(Options.OutputDirectory, "strings.dat"), buffer);
         }
 
         unsafe static void ExportClassesJson(RuntimeTypeArray runtimeTypes)
         {
             Console.WriteLine("Writing classes.json...");
-            using var tw = new StreamWriter(Path.Combine(OutputDirectory, "classes.json"));
+            using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "classes.json"));
             tw.WriteLine("{");
 
             var entries = from type in runtimeTypes select $"  \"{(int)type.PersistentTypeID}\": \"{type.Name}\"";
@@ -93,8 +93,7 @@ namespace TypeTreeDumper
         unsafe static void ExportStructData(UnityEngine engine)
         {
             Console.WriteLine("Writing structure information...");
-            var flags    = TransferInstructionFlags.SerializeGameRelease;
-            using var bw = new BinaryWriter(File.OpenWrite(Path.Combine(OutputDirectory, "structs.dat")));
+            using var bw = new BinaryWriter(File.OpenWrite(Path.Combine(Options.OutputDirectory, "structs.dat")));
 
             bw.Write(Encoding.UTF8.GetBytes(engine.Version.ToString()));
             bw.Write((byte)0);
@@ -144,7 +143,7 @@ namespace TypeTreeDumper
 
                 Console.WriteLine("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
                 Console.WriteLine("[{0}] Generating type tree...", i);
-                var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
+                var tree = engine.TypeTreeFactory.GetTypeTree(obj, Options.TransferFlags);
 
                 Console.WriteLine("[{0}] Getting GUID...", i);
                 bw.Write((int)iter.PersistentTypeID);
@@ -162,8 +161,7 @@ namespace TypeTreeDumper
         unsafe static void ExportStructDump(UnityEngine engine)
         {
             Console.WriteLine("Writing structure information dump...");
-            var flags    = TransferInstructionFlags.SerializeGameRelease;
-            using var tw = new StreamWriter(Path.Combine(OutputDirectory, "structs.dump"));
+            using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "structs.dump"));
 
             for (int i = 0; i < engine.RuntimeTypes.Count; i++)
             {
@@ -220,7 +218,7 @@ namespace TypeTreeDumper
 
                 Console.WriteLine("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
                 Console.WriteLine("[{0}] Generating type tree...", i);
-                var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
+                var tree = engine.TypeTreeFactory.GetTypeTree(obj, Options.TransferFlags);
                 TypeTreeUtility.CreateTextDump(tree, tw);
             }
         }
