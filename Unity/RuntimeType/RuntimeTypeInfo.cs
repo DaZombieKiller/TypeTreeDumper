@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Unity
 {
@@ -29,6 +30,8 @@ namespace Unity
         public PersistentTypeID PersistentTypeID => TypeInfo.PersistentTypeID;
 
         public RuntimeTypeInfo Base => TypeInfo.Base;
+
+        public List<RuntimeTypeInfo> Derived { get; } = new List<RuntimeTypeInfo>();
 
         public int Size => TypeInfo.Size;
 

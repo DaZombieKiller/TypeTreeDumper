@@ -27,4 +27,32 @@ namespace Unity
         FixedBuffer                            = 1 << 27,
         DisallowSerializedPropertyModification = 1 << 28,
     }
+
+    public static class TransferMetaFlagsExtensions
+    {
+        public static bool IsHideInEditor(this TransferMetaFlags _this)
+        {
+            return (_this & TransferMetaFlags.HideInEditor) != 0;
+        }
+        public static bool IsNotEditable(this TransferMetaFlags _this)
+        {
+            return (_this & TransferMetaFlags.NotEditable) != 0;
+        }
+        public static bool IsStrongPPtr(this TransferMetaFlags _this)
+        {
+            return (_this & TransferMetaFlags.StrongPPtr) != 0;
+        }
+        public static bool IsTreatIntegerValueAsBoolean(this TransferMetaFlags _this)
+        {
+            return (_this & TransferMetaFlags.TreatIntegerValueAsBoolean) != 0;
+        }
+        public static bool IsAlignBytes(this TransferMetaFlags _this)
+        {
+            return (_this & TransferMetaFlags.AlignBytes) != 0;
+        }
+        public static bool IsAnyChildUsesAlignBytesFlag(this TransferMetaFlags _this)
+        {
+            return (_this & TransferMetaFlags.AnyChildUsesAlignBytesFlag) != 0;
+        }
+    }
 }

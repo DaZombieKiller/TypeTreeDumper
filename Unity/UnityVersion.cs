@@ -153,6 +153,8 @@ namespace Unity
 
         public static bool operator <=(UnityVersion a, UnityVersion b) => a.CompareTo(b) <= 0;
 
+        public static explicit operator Version(UnityVersion version) => new Version(version.Major,version.Minor,version.Patch,version.Build);
+
         public bool Equals(UnityVersion other) => CompareTo(other) == 0;
 
         public override bool Equals(object obj) => obj is UnityVersion version && Equals(version);
