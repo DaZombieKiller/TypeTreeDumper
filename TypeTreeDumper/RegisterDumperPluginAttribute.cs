@@ -2,8 +2,8 @@
 
 namespace TypeTreeDumper
 {
-    [AttributeUsage(AttributeTargets.Assembly)]
-    public class RegisterDumperPluginAttribute : Attribute
+    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+    public sealed class RegisterDumperPluginAttribute : Attribute
     {
         public Type PluginType { get; }
 

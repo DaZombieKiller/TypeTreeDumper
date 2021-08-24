@@ -1,5 +1,4 @@
 ﻿using System;
-using TypeTreeDumper.Interfaces;
 using Unity;
 
 namespace TypeTreeDumper

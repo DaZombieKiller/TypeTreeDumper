@@ -3,7 +3,6 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using Unity;
-using TypeTreeDumper.Interfaces;
 
 namespace TypeTreeDumper
 {

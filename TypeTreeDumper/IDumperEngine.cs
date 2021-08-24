@@ -1,7 +1,7 @@
 ﻿using System;
 using Unity;
 
-namespace TypeTreeDumper.Interfaces
+namespace TypeTreeDumper
 {
     public interface IDumperEngine
     {

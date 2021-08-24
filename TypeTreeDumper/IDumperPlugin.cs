@@ -1,6 +1,6 @@
 ﻿using Unity;
 
-namespace TypeTreeDumper.Interfaces
+namespace TypeTreeDumper
 {
     public interface IDumperPlugin
     {
