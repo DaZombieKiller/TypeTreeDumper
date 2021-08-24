@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace Unity
@@ -69,6 +70,14 @@ namespace Unity
                     }
                 }
             }
+            foreach(RuntimeTypeInfo type in types)
+            {
+                if(type.Base != null)
+                {
+                    var baseType = GetFromName(type.Base.FullName);
+                    baseType.Derived.Add(type);
+                }
+            }
         }
 
         public IEnumerator<RuntimeTypeInfo> GetEnumerator()
@@ -86,5 +95,7 @@ namespace Unity
             public int Count;
             public IntPtr First;
         }
+
+        private RuntimeTypeInfo GetFromName(string fullName) => types.Where(x => x.FullName == fullName).FirstOrDefault();
     }
 }
