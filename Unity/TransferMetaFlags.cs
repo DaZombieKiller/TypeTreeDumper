@@ -30,29 +30,25 @@ namespace Unity
 
     public static class TransferMetaFlagsExtensions
     {
-        public static bool IsHideInEditor(this TransferMetaFlags _this)
-        {
-            return (_this & TransferMetaFlags.HideInEditor) != 0;
-        }
-        public static bool IsNotEditable(this TransferMetaFlags _this)
-        {
-            return (_this & TransferMetaFlags.NotEditable) != 0;
-        }
-        public static bool IsStrongPPtr(this TransferMetaFlags _this)
-        {
-            return (_this & TransferMetaFlags.StrongPPtr) != 0;
-        }
-        public static bool IsTreatIntegerValueAsBoolean(this TransferMetaFlags _this)
-        {
-            return (_this & TransferMetaFlags.TreatIntegerValueAsBoolean) != 0;
-        }
-        public static bool IsAlignBytes(this TransferMetaFlags _this)
-        {
-            return (_this & TransferMetaFlags.AlignBytes) != 0;
-        }
-        public static bool IsAnyChildUsesAlignBytesFlag(this TransferMetaFlags _this)
-        {
-            return (_this & TransferMetaFlags.AnyChildUsesAlignBytesFlag) != 0;
-        }
+        public static bool IsHideInEditor(this TransferMetaFlags _this) => (_this & TransferMetaFlags.HideInEditor) != 0;
+        public static bool IsNotEditable(this TransferMetaFlags _this) => (_this & TransferMetaFlags.NotEditable) != 0;
+        public static bool IsStrongPPtr(this TransferMetaFlags _this) => (_this & TransferMetaFlags.StrongPPtr) != 0;
+        public static bool IsTreatIntegerValueAsBoolean(this TransferMetaFlags _this) => (_this & TransferMetaFlags.TreatIntegerValueAsBoolean) != 0;
+        public static bool IsSimpleEditor(this TransferMetaFlags _this) => (_this & TransferMetaFlags.SimpleEditor) != 0;
+        public static bool IsDebugProperty(this TransferMetaFlags _this) => (_this & TransferMetaFlags.DebugProperty) != 0;
+        public static bool IsAlignBytes(this TransferMetaFlags _this) => (_this & TransferMetaFlags.AlignBytes) != 0;
+        public static bool IsAnyChildUsesAlignBytesFlag(this TransferMetaFlags _this) => (_this & TransferMetaFlags.AnyChildUsesAlignBytesFlag) != 0;
+        public static bool IsIgnoreWithInspectorUndo(this TransferMetaFlags _this) => (_this & TransferMetaFlags.IgnoreWithInspectorUndo) != 0;
+        public static bool IsEditorDisplaysCharacterMap(this TransferMetaFlags _this) => (_this & TransferMetaFlags.EditorDisplaysCharacterMap) != 0;
+        public static bool IsIgnoreInMetaFiles(this TransferMetaFlags _this) => (_this & TransferMetaFlags.IgnoreInMetaFiles) != 0;
+        public static bool IsTransferAsArrayEntryNameInMetaFiles(this TransferMetaFlags _this) => (_this & TransferMetaFlags.TransferAsArrayEntryNameInMetaFiles) != 0;
+        public static bool IsTransferUsingFlowMappingStyle(this TransferMetaFlags _this) => (_this & TransferMetaFlags.TransferUsingFlowMappingStyle) != 0;
+        public static bool IsGenerateBitwiseDifferences(this TransferMetaFlags _this) => (_this & TransferMetaFlags.GenerateBitwiseDifferences) != 0;
+        public static bool IsDontAnimate(this TransferMetaFlags _this) => (_this & TransferMetaFlags.DontAnimate) != 0;
+        public static bool IsTransferHex64(this TransferMetaFlags _this) => (_this & TransferMetaFlags.TransferHex64) != 0;
+        public static bool IsCharPropertyMask(this TransferMetaFlags _this) => (_this & TransferMetaFlags.CharPropertyMask) != 0;
+        public static bool IsDontValidateUTF8(this TransferMetaFlags _this) => (_this & TransferMetaFlags.DontValidateUTF8) != 0;
+        public static bool IsFixedBuffer(this TransferMetaFlags _this) => (_this & TransferMetaFlags.FixedBuffer) != 0;
+        public static bool IsDisallowSerializedPropertyModification(this TransferMetaFlags _this) => (_this & TransferMetaFlags.DisallowSerializedPropertyModification) != 0;
     }
 }
