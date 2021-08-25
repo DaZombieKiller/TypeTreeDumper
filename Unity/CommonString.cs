@@ -17,5 +17,20 @@ namespace Unity
             if (resolver.TryResolve($"?BufferEnd@CommonString@Unity@@3Q{NameMangling.Ptr64}BD{NameMangling.Ptr64}B", out IntPtr end))
                 BufferEnd = Marshal.ReadIntPtr(end);
         }
+
+        public unsafe byte[] GetData()
+        {
+            if (BufferBegin == IntPtr.Zero || BufferEnd == IntPtr.Zero)
+                return new byte[0];
+
+            var source = (byte*)BufferBegin;
+            var length = (byte*)BufferEnd - source - 1;
+            var buffer = new byte[length];
+
+            fixed (byte* destination = buffer)
+                Buffer.MemoryCopy(source, destination, length, length);
+
+            return buffer;
+        }
     }
 }
