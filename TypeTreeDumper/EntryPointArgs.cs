@@ -7,5 +7,7 @@ namespace TypeTreeDumper
     {
         public string OutputPath;
         public string ProjectPath;
+        public bool Verbose;
+        public bool Silent;
     }
 }

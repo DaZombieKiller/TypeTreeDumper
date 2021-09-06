@@ -13,7 +13,7 @@ namespace TypeTreeDumper
         public static void Execute(UnityEngine engine, ExportOptions options, DumperEngine dumperEngine)
         {
             Options = options;
-            Console.WriteLine($"Starting export. UnityVersion {engine.Version}.");
+            Logger.Info($"Starting export. UnityVersion {engine.Version}.");
             Directory.CreateDirectory(Options.OutputDirectory);
             TransferInstructionFlags releaseFlags = Options.TransferFlags | TransferInstructionFlags.SerializeGameRelease;
             TransferInstructionFlags editorFlags = Options.TransferFlags & (~TransferInstructionFlags.SerializeGameRelease);
@@ -37,12 +37,12 @@ namespace TypeTreeDumper
                 ExportStructData(engine, "editor_structs.dat", editorFlags);
             }
             dumperEngine.InvokeExportCompleted(engine, options);
-            Console.WriteLine("Success");
+            Logger.Info("Success");
         }
 
         static void ExportRTTI(RuntimeTypeArray runtimeTypes)
         {
-            Console.WriteLine("Writing RTTI...");
+            Logger.Info("Writing RTTI...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "RTTI.dump"));
             for (int i = 0; i < runtimeTypes.Count; i++)
             {
@@ -69,7 +69,7 @@ namespace TypeTreeDumper
             if (strings.BufferBegin == IntPtr.Zero || strings.BufferEnd == IntPtr.Zero)
                 return;
 
-            Console.WriteLine("Writing common string buffer...");
+            Logger.Info("Writing common string buffer...");
             var source = (byte*)strings.BufferBegin;
             var length = (byte*)strings.BufferEnd - source - 1;
             var buffer = new byte[length];
@@ -82,7 +82,7 @@ namespace TypeTreeDumper
 
         unsafe static void ExportClassesJson(RuntimeTypeArray runtimeTypes)
         {
-            Console.WriteLine("Writing classes.json...");
+            Logger.Info("Writing classes.json...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "classes.json"));
             tw.WriteLine("{");
 
@@ -95,7 +95,7 @@ namespace TypeTreeDumper
 
         unsafe static void ExportStructData(UnityEngine engine, string fileName, TransferInstructionFlags flags)
         {
-            Console.WriteLine("Writing structure information...");
+            Logger.Info("Writing structure information...");
             using var bw = new BinaryWriter(File.OpenWrite(Path.Combine(Options.OutputDirectory, fileName)));
 
             bw.Write(Encoding.UTF8.GetBytes(engine.Version.ToString()));
@@ -107,13 +107,13 @@ namespace TypeTreeDumper
             var countPosition = (int)bw.BaseStream.Position;
             var typeCount     = 0;
 
-            Console.WriteLine("Writing runtime types...");
+            Logger.Verb("Writing runtime types...");
             for (int i = 0; i < engine.RuntimeTypes.Count; i++)
             {
                 var type = engine.RuntimeTypes[i];
                 var iter = type;
 
-                Console.WriteLine("[{0}] Child: {1}::{2}, {3}, {4}",
+                Logger.Verb("[{0}] Child: {1}::{2}, {3}, {4}",
                     i,
                     type.Namespace,
                     type.Name,
@@ -121,7 +121,7 @@ namespace TypeTreeDumper
                     type.PersistentTypeID
                 );
 
-                Console.WriteLine("[{0}] Getting base type...", i);
+                Logger.Verb("[{0}] Getting base type...", i);
                 while (iter.IsAbstract)
                 {
                     if (iter.Base == null)
@@ -130,7 +130,7 @@ namespace TypeTreeDumper
                     iter = iter.Base;
                 }
 
-                Console.WriteLine("[{0}] Base: {1}::{2}, {3}, {4}",
+                Logger.Verb("[{0}] Base: {1}::{2}, {3}, {4}",
                     i,
                     iter.Namespace,
                     iter.Name,
@@ -138,17 +138,17 @@ namespace TypeTreeDumper
                     iter.PersistentTypeID
                 );
 
-                Console.WriteLine("[{0}] Producing native object...", i);
+                Logger.Verb("[{0}] Producing native object...", i);
                 using var obj = engine.ObjectFactory.GetOrProduce(iter);
 
                 if (obj == null)
                     continue;
 
-                Console.WriteLine("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
-                Console.WriteLine("[{0}] Generating type tree...", i);
+                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
+                Logger.Verb("[{0}] Generating type tree...", i);
                 var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
 
-                Console.WriteLine("[{0}] Getting GUID...", i);
+                Logger.Verb("[{0}] Getting GUID...", i);
                 bw.Write((int)iter.PersistentTypeID);
                 for (int j = 0, n = iter.PersistentTypeID < 0 ? 0x20 : 0x10; j < n; ++j)
                     bw.Write((byte)0);
@@ -163,7 +163,7 @@ namespace TypeTreeDumper
 
         unsafe static void ExportStructDump(UnityEngine engine, string fileName, TransferInstructionFlags flags)
         {
-            Console.WriteLine("Writing structure information dump...");
+            Logger.Info("Writing structure information dump...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, fileName));
 
             for (int i = 0; i < engine.RuntimeTypes.Count; i++)
@@ -172,7 +172,7 @@ namespace TypeTreeDumper
                 var iter        = type;
                 var inheritance = string.Empty;
 
-                Console.WriteLine("[{0}] Child: {1}::{2}, {3}, {4}",
+                Logger.Verb("[{0}] Child: {1}::{2}, {3}, {4}",
                     i,
                     type.Namespace,
                     type.Name,
@@ -180,7 +180,7 @@ namespace TypeTreeDumper
                     type.PersistentTypeID
                 );
 
-                Console.WriteLine("[{0}] Getting base type...", i);
+                Logger.Verb("[{0}] Getting base type...", i);
                 while (true)
                 {
                     inheritance += iter.Name;
@@ -205,7 +205,7 @@ namespace TypeTreeDumper
                     iter = iter.Base;
                 }
 
-                Console.WriteLine("[{0}] Base: {1}::{2}, {3}, {4}",
+                Logger.Verb("[{0}] Base: {1}::{2}, {3}, {4}",
                     i,
                     iter.Namespace,
                     iter.Name,
@@ -213,14 +213,14 @@ namespace TypeTreeDumper
                     iter.PersistentTypeID
                 );
 
-                Console.WriteLine("[{0}] Producing native object...", i);
+                Logger.Verb("[{0}] Producing native object...", i);
                 using var obj = engine.ObjectFactory.GetOrProduce(iter);
 
                 if (obj == null)
                     continue;
 
-                Console.WriteLine("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
-                Console.WriteLine("[{0}] Generating type tree...", i);
+                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
+                Logger.Verb("[{0}] Generating type tree...", i);
                 var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
                 TypeTreeUtility.CreateTextDump(tree, tw);
             }
