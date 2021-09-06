@@ -5,18 +5,37 @@ using System.Text;
 using System.Management;
 using System.Diagnostics;
 using System.Collections.Generic;
+using CommandLine;
 using EasyHook;
 
 namespace TypeTreeDumper
 {
+    internal class Options
+    {
+        [Value(0, Required = true, HelpText = "Path to the Unity executable.")]
+        public string UnityExePath { get; set; }
+
+        [Option('o', "output", HelpText = "Directory to export to.")]
+        public string OutputDirectory { get; set; }
+
+        [Option('v', "verbose", Default = false, HelpText = "Verbose logging output.")]
+        public bool Verbose { get; set; }
+
+        [Option('s', "silent", Default = false, HelpText = "No logging output except errors.")]
+        public bool Silent { get; set; }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            if (args.Length == 0)
-                args = new[] { @"C:\Program Files\Unity\Hub\Editor\2020.2.0b8\Editor\Unity.exe" };
+            CommandLine.Parser.Default.ParseArguments<Options>(args)
+                .WithParsed(options => Main(options) );
+        }
 
-            var version          = FileVersionInfo.GetVersionInfo(args[0]);
+        static void Main(Options options)
+        {
+            var version          = FileVersionInfo.GetVersionInfo(options.UnityExePath);
             var projectDirectory = Path.GetFullPath("DummyProject-" + version.FileVersion);
             var commandLineArgs  = new List<string>
             {
@@ -43,7 +62,7 @@ namespace TypeTreeDumper
                 var executablePath = mo.GetPropertyValue("ExecutablePath") as string ?? string.Empty;
                 var commandLine    = mo.GetPropertyValue("CommandLine")    as string ?? string.Empty;
 
-                if (executablePath.Equals(args[0], StringComparison.OrdinalIgnoreCase) &&
+                if (executablePath.Equals(options.UnityExePath, StringComparison.OrdinalIgnoreCase) &&
                     commandLine.Contains(EscapeArgument(projectDirectory)))
                 {
                     Console.WriteLine("Terminating orphaned editor process {0}...", process.Id);
@@ -51,7 +70,7 @@ namespace TypeTreeDumper
                 }
             }
 
-            RemoteHooking.CreateAndInject(args[0],
+            RemoteHooking.CreateAndInject(options.UnityExePath,
                 CreateCommandLine(commandLineArgs),
                 InProcessCreationFlags: 0,
                 InjectionOptions.DoNotRequireStrongName,
@@ -60,8 +79,10 @@ namespace TypeTreeDumper
                 out int processID,
                 new EntryPointArgs
                 {
-                    OutputPath  = Path.Combine(Environment.CurrentDirectory, "Output"),
-                    ProjectPath = projectDirectory
+                    OutputPath  = (new DirectoryInfo(options.OutputDirectory ?? "Output")).FullName,
+                    ProjectPath = projectDirectory,
+                    Verbose = options.Verbose,
+                    Silent = options.Silent
                 }
             );
 

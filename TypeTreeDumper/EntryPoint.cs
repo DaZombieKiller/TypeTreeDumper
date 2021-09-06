@@ -81,7 +81,7 @@ namespace TypeTreeDumper
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
+                Logger.Error(ex);
                 throw;
             }
         }
@@ -93,6 +93,7 @@ namespace TypeTreeDumper
 
             try
             {
+                ConsoleLogger.Initialize(args.Silent, args.Verbose);
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
                     AttachToParentConsole();
 
@@ -136,7 +137,7 @@ namespace TypeTreeDumper
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
+                Logger.Error(ex);
                 throw;
             }
         }
@@ -159,7 +160,7 @@ namespace TypeTreeDumper
 
         static void ExecuteDumper()
         {
-            Console.WriteLine("Executing Dumper");
+            Logger.Info("Executing Dumper");
             UnityVersion version;
             GetUnityVersionDelegate GetUnityVersion;
 
@@ -195,7 +196,7 @@ namespace TypeTreeDumper
 
         static int ValidateDates(IntPtr @this, IntPtr param1)
         {
-            Console.WriteLine("Validating dates");
+            Logger.Info("Validating dates");
             return 0;
         }
 
@@ -232,7 +233,7 @@ namespace TypeTreeDumper
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex);
+                Logger.Error(ex);
                 throw;
             }
             finally
@@ -243,7 +244,7 @@ namespace TypeTreeDumper
 
         void InitializeFallbackLoader()
         {
-            Console.WriteLine("Initializing fallback loader...");
+            Logger.Info("Initializing fallback loader...");
             FallbackLoaderCallback = new FallbackLoader.CallbackDelegate(HandleEngineInitialization);
             var source      = typeof(FallbackLoader).Assembly.Location;
             var destination = Path.Combine(ProjectPath, "Assets");

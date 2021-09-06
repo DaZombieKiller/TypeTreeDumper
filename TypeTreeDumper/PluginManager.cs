@@ -19,7 +19,7 @@ namespace TypeTreeDumper
 
         internal static void LoadPlugins()
         {
-            Console.WriteLine("Loading plugins");
+            Logger.Info("Loading plugins");
             foreach(string file in Directory.GetFiles(PluginDirectory, "*.dll"))
             {
                 if(TryLoadAssembly(file, out Assembly assembly) && TryGetCustomAttributes(assembly, out IEnumerable<RegisterDumperPluginAttribute> attributes))
@@ -32,18 +32,18 @@ namespace TypeTreeDumper
                             try
                             {
                                 Plugins.Add((IDumperPlugin)Activator.CreateInstance(pluginType));
-                                Console.WriteLine($"'{pluginType.Name}' loaded");
+                                Logger.Info($"'{pluginType.Name}' loaded");
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Error while instantiating {pluginType?.Name ?? "a plugin"}");
-                                Console.WriteLine(ex.ToString());
+                                Logger.Error($"Error while instantiating {pluginType?.Name ?? "a plugin"}");
+                                Logger.Error(ex.ToString());
                             }
                         }
                     }
                 }
             }
-            Console.WriteLine($"{Plugins.Count} plugins loaded");
+            Logger.Info($"{Plugins.Count} plugins loaded");
         }
 
         internal static void InitializePlugins(IDumperEngine dumperEngine)
@@ -63,8 +63,8 @@ namespace TypeTreeDumper
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error while loading the assembly at {path}");
-                Console.WriteLine(ex.ToString());
+                Logger.Error($"Error while loading the assembly at {path}");
+                Logger.Error(ex.ToString());
                 assembly = null;
                 return false;
             }
@@ -79,8 +79,8 @@ namespace TypeTreeDumper
             }
             catch(Exception ex)
             {
-                Console.WriteLine($"Error while getting the attributes for {assembly?.FullName ?? "an assembly"}");
-                Console.WriteLine(ex.ToString());
+                Logger.Error($"Error while getting the attributes for {assembly?.FullName ?? "an assembly"}");
+                Logger.Error(ex.ToString());
                 attributes = null;
                 return false;
             }
