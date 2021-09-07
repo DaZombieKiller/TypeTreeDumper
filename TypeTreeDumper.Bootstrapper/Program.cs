@@ -36,7 +36,7 @@ namespace TypeTreeDumper
         static void Main(Options options)
         {
             var version          = FileVersionInfo.GetVersionInfo(options.UnityExePath);
-            var projectDirectory = Path.GetFullPath("DummyProject-" + version.FileVersion);
+            var projectDirectory = ExecutingDirectory.Combine("DummyProject-" + version.FileVersion);
             var commandLineArgs  = new List<string>
             {
                 "-nographics",
@@ -79,7 +79,7 @@ namespace TypeTreeDumper
                 out int processID,
                 new EntryPointArgs
                 {
-                    OutputPath  = (new DirectoryInfo(options.OutputDirectory ?? "Output")).FullName,
+                    OutputPath  = (new DirectoryInfo(options.OutputDirectory ?? ExecutingDirectory.Combine("Output"))).FullName,
                     ProjectPath = projectDirectory,
                     Verbose = options.Verbose,
                     Silent = options.Silent
