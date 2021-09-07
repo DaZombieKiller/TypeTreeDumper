@@ -41,7 +41,7 @@ namespace TypeTreeDumper
             {
                 "-nographics",
                 "-batchmode",
-                "-logFile", Path.Combine(Environment.CurrentDirectory, "Log.txt")
+                "-logFile", ExecutingDirectory.Combine("Log.txt")
             };
 
             if (version.FileMajorPart == 3)
