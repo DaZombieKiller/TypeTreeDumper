@@ -36,7 +36,7 @@ namespace TypeTreeDumper
         static void Main(Options options)
         {
             var version          = FileVersionInfo.GetVersionInfo(options.UnityExePath);
-            var projectDirectory = Path.Combine(System.AppContext.BaseDirectory, "DummyProject-" + version.FileVersion);
+            var projectDirectory = Path.Combine(System.AppContext.BaseDirectory, "DummyProjects", "DummyProject-" + version.FileVersion);
             var commandLineArgs  = new List<string>
             {
                 "-nographics",
