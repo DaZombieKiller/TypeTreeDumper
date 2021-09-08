@@ -44,23 +44,20 @@ namespace TypeTreeDumper
         {
             Logger.Info("Writing RTTI...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "RTTI.dump"));
-            for (int i = 0; i < runtimeTypes.Count; i++)
+            foreach (var type in runtimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
             {
-                var type = runtimeTypes[i];
-                tw.WriteLine(i);
+                tw.WriteLine($"PersistentTypeID {(int)type.PersistentTypeID}");
                 tw.WriteLine($"    Name {type.Name}");
                 tw.WriteLine($"    Namespace {type.Namespace}");
                 tw.WriteLine($"    Module {type.Module}");
-                tw.WriteLine($"    PersistentTypeID {type.PersistentTypeID}");
                 tw.WriteLine($"    Size {type.Size}");
-                tw.WriteLine($"    TypeIndex {type.TypeIndex}");
+                tw.WriteLine($"    Base {type.Base?.Name ?? ""}");
                 tw.WriteLine($"    DescendantCount {type.DescendantCount}");
                 tw.WriteLine($"    IsAbstract {type.IsAbstract}");
                 tw.WriteLine($"    IsSealed {type.IsSealed}");
                 tw.WriteLine($"    IsStripped {type.IsStripped}");
                 tw.WriteLine($"    IsEditorOnly {type.IsEditorOnly}");
-                tw.WriteLine($"    Attributes 0x{type.Attributes.ToInt64():X}");
-                tw.WriteLine($"    AttributeCount {type.AttributeCount}");
+                tw.WriteLine();
             }
         }
 
@@ -86,7 +83,7 @@ namespace TypeTreeDumper
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "classes.json"));
             tw.WriteLine("{");
 
-            var entries = from type in runtimeTypes select $"  \"{(int)type.PersistentTypeID}\": \"{type.Name}\"";
+            var entries = from type in runtimeTypes.OrderBy(x => (int)x.PersistentTypeID) select $"  \"{(int)type.PersistentTypeID}\": \"{type.Name}\"";
             var json    = string.Join(',' + tw.NewLine, entries);
 
             tw.WriteLine(json);
@@ -108,20 +105,19 @@ namespace TypeTreeDumper
             var typeCount     = 0;
 
             Logger.Verb("Writing runtime types...");
-            for (int i = 0; i < engine.RuntimeTypes.Count; i++)
+            foreach(var type in engine.RuntimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
             {
-                var type = engine.RuntimeTypes[i];
                 var iter = type;
 
                 Logger.Verb("[{0}] Child: {1}::{2}, {3}, {4}",
-                    i,
+                    typeCount,
                     type.Namespace,
                     type.Name,
                     type.Module,
                     type.PersistentTypeID
                 );
 
-                Logger.Verb("[{0}] Getting base type...", i);
+                Logger.Verb("[{0}] Getting base type...", typeCount);
                 while (iter.IsAbstract)
                 {
                     if (iter.Base == null)
@@ -131,24 +127,24 @@ namespace TypeTreeDumper
                 }
 
                 Logger.Verb("[{0}] Base: {1}::{2}, {3}, {4}",
-                    i,
+                    typeCount,
                     iter.Namespace,
                     iter.Name,
                     iter.Module,
                     iter.PersistentTypeID
                 );
 
-                Logger.Verb("[{0}] Producing native object...", i);
+                Logger.Verb("[{0}] Producing native object...", typeCount);
                 using var obj = engine.ObjectFactory.GetOrProduce(iter);
 
                 if (obj == null)
                     continue;
 
-                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
-                Logger.Verb("[{0}] Generating type tree...", i);
+                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", typeCount, obj.InstanceID, obj.IsPersistent);
+                Logger.Verb("[{0}] Generating type tree...", typeCount);
                 var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
 
-                Logger.Verb("[{0}] Getting GUID...", i);
+                Logger.Verb("[{0}] Getting GUID...", typeCount);
                 bw.Write((int)iter.PersistentTypeID);
                 for (int j = 0, n = iter.PersistentTypeID < 0 ? 0x20 : 0x10; j < n; ++j)
                     bw.Write((byte)0);
@@ -166,21 +162,21 @@ namespace TypeTreeDumper
             Logger.Info("Writing structure information dump...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, fileName));
 
-            for (int i = 0; i < engine.RuntimeTypes.Count; i++)
+            int typeCount = 0;
+            foreach(var type in engine.RuntimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
             {
-                var type        = engine.RuntimeTypes[i];
                 var iter        = type;
                 var inheritance = string.Empty;
 
                 Logger.Verb("[{0}] Child: {1}::{2}, {3}, {4}",
-                    i,
+                    typeCount,
                     type.Namespace,
                     type.Name,
                     type.Module,
                     type.PersistentTypeID
                 );
 
-                Logger.Verb("[{0}] Getting base type...", i);
+                Logger.Verb("[{0}] Getting base type...", typeCount);
                 while (true)
                 {
                     inheritance += iter.Name;
@@ -206,23 +202,25 @@ namespace TypeTreeDumper
                 }
 
                 Logger.Verb("[{0}] Base: {1}::{2}, {3}, {4}",
-                    i,
+                    typeCount,
                     iter.Namespace,
                     iter.Name,
                     iter.Module,
                     iter.PersistentTypeID
                 );
 
-                Logger.Verb("[{0}] Producing native object...", i);
+                Logger.Verb("[{0}] Producing native object...", typeCount);
                 using var obj = engine.ObjectFactory.GetOrProduce(iter);
 
                 if (obj == null)
                     continue;
 
-                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", i, obj.InstanceID, obj.IsPersistent);
-                Logger.Verb("[{0}] Generating type tree...", i);
+                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", typeCount, obj.InstanceID, obj.IsPersistent);
+                Logger.Verb("[{0}] Generating type tree...", typeCount);
                 var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
                 TypeTreeUtility.CreateTextDump(tree, tw);
+
+                typeCount++;
             }
         }
     }
