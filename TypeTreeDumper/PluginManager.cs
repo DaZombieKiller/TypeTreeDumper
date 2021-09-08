@@ -13,7 +13,7 @@ namespace TypeTreeDumper
 
         static PluginManager()
         {
-            PluginDirectory = ExecutingDirectory.Combine("Plugins");
+            PluginDirectory = Path.Combine(System.AppContext.BaseDirectory, "Plugins");
             Directory.CreateDirectory(PluginDirectory);
         }
 
