@@ -50,7 +50,6 @@ namespace TypeTreeDumper
                 tw.WriteLine($"    Name {type.Name}");
                 tw.WriteLine($"    Namespace {type.Namespace}");
                 tw.WriteLine($"    Module {type.Module}");
-                tw.WriteLine($"    Size {type.Size}");
                 tw.WriteLine($"    Base {type.Base?.Name ?? ""}");
                 tw.WriteLine($"    DescendantCount {type.DescendantCount}");
                 tw.WriteLine($"    IsAbstract {type.IsAbstract}");
