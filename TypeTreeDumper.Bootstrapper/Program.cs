@@ -36,12 +36,12 @@ namespace TypeTreeDumper
         static void Main(Options options)
         {
             var version          = FileVersionInfo.GetVersionInfo(options.UnityExePath);
-            var projectDirectory = Path.GetFullPath("DummyProject-" + version.FileVersion);
+            var projectDirectory = Path.Combine(System.AppContext.BaseDirectory, "DummyProject-" + version.FileVersion);
             var commandLineArgs  = new List<string>
             {
                 "-nographics",
                 "-batchmode",
-                "-logFile", Path.Combine(Environment.CurrentDirectory, "Log.txt")
+                "-logFile", Path.Combine(System.AppContext.BaseDirectory, "Log.txt")
             };
 
             if (version.FileMajorPart == 3)
@@ -79,7 +79,7 @@ namespace TypeTreeDumper
                 out int processID,
                 new EntryPointArgs
                 {
-                    OutputPath  = (new DirectoryInfo(options.OutputDirectory ?? "Output")).FullName,
+                    OutputPath  = Path.GetFullPath(options.OutputDirectory ?? Path.Combine(System.AppContext.BaseDirectory, "Output")),
                     ProjectPath = projectDirectory,
                     Verbose = options.Verbose,
                     Silent = options.Silent
