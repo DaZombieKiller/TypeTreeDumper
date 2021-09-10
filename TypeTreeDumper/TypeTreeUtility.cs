@@ -32,7 +32,7 @@ namespace TypeTreeDumper
             {
                 var node = tree[i];
                 for (int j = 0; j < node.Level; j++)
-                    writer.Write("  ");
+                    writer.Write('\t');
                 string type = node.TypeName;
                 string name = node.Name;
                 writer.WriteLine(string.Format("{0} {1} // ByteSize{{{2}}}, Index{{{3}}}, IsArray{{{4}}}, MetaFlag{{{5}}}",
