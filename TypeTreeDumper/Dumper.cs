@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Linq;
 using Unity;
+using Newtonsoft.Json;
 
 namespace TypeTreeDumper
 {
@@ -35,6 +36,10 @@ namespace TypeTreeDumper
             {
                 ExportStructData(engine, "structs.dat", releaseFlags);
                 ExportStructData(engine, "editor_structs.dat", editorFlags);
+            }
+            if (options.ExportTextDump)
+            {
+                ExportInfoJson(engine);
             }
             dumperEngine.InvokeExportCompleted(engine, options);
             Logger.Info("Success");
@@ -221,6 +226,19 @@ namespace TypeTreeDumper
 
                 typeCount++;
             }
+        }
+
+        unsafe static void ExportInfoJson(UnityEngine engine)
+        {
+            Logger.Info("Writing information json...");
+            using var sw = new StreamWriter(Path.Combine(Options.OutputDirectory, "info.json"));
+            using JsonTextWriter writer = new JsonTextWriter(sw);
+            JsonSerializer serializer = new JsonSerializer();
+            serializer.Formatting = Formatting.Indented;
+            writer.Indentation = 1;
+            writer.IndentChar = '\t';
+            var info = UnityInfo.Create(engine);
+            serializer.Serialize(writer, info, typeof(UnityInfo));
         }
     }
 }
