@@ -232,9 +232,11 @@ namespace TypeTreeDumper
         {
             Logger.Info("Writing information json...");
             using var sw = new StreamWriter(Path.Combine(Options.OutputDirectory, "info.json"));
-            using JsonWriter writer = new JsonTextWriter(sw);
+            using JsonTextWriter writer = new JsonTextWriter(sw);
             JsonSerializer serializer = new JsonSerializer();
             serializer.Formatting = Formatting.Indented;
+            writer.Indentation = 1;
+            writer.IndentChar = '\t';
             var info = UnityInfo.Create(engine);
             serializer.Serialize(writer, info, typeof(UnityInfo));
         }
