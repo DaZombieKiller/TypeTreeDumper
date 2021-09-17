@@ -106,7 +106,9 @@ namespace TypeTreeDumper
             bw.Write((byte)1); // hasTypeTrees
 
             var countPosition = (int)bw.BaseStream.Position;
-            var typeCount     = 0;
+            var typeCount = 0;
+            //Later will be overwritten with actual type count
+            bw.Write(typeCount);
 
             Logger.Verb("Writing runtime types...");
             foreach(var type in engine.RuntimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
