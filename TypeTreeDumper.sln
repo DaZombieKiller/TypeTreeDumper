@@ -13,7 +13,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper.Loader", "Ty
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6ECA25EE-9149-4434-A933-287DCC7E918D}"
 	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		GenDia2Lib.bat = GenDia2Lib.bat
 		LICENSE = LICENSE
