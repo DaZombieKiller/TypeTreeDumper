@@ -13,7 +13,7 @@ namespace TypeTreeDumper
         public int Index { get; set; }
         public short Version { get; set; }
         public byte TypeFlags { get; set; }
-        public int MetaFlag { get; set; }
+        public uint MetaFlag { get; set; }
         public List<UnityNode> SubNodes { get; set; }
         [JsonIgnore]
         public UnityNode Parent { get; set; }
@@ -32,7 +32,7 @@ namespace TypeTreeDumper
             Index = treeNode.Index;
             Version = treeNode.Version;
             TypeFlags = (byte)treeNode.TypeFlags;
-            MetaFlag = (int)treeNode.MetaFlag;
+            MetaFlag = (uint)treeNode.MetaFlag;
             SubNodes = new List<UnityNode>();
         }
     }

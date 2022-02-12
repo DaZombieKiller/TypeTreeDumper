@@ -43,7 +43,7 @@ namespace TypeTreeDumper
             IsStripped = runtimeType.IsStripped;
         }
 
-        public static List<UnityClass> MakeList(UnityEngine engine)
+        public static List<UnityClass> MakeList(UnityEngine engine, TransferInstructionFlags releaseFlags, TransferInstructionFlags editorFlags)
         {
             var result = new List<UnityClass>();
 
@@ -64,8 +64,8 @@ namespace TypeTreeDumper
 
                 if (obj != null)
                 {
-                    TypeTree editorTree = engine.TypeTreeFactory.GetTypeTree(obj, TransferInstructionFlags.None);
-                    TypeTree releaseTree = engine.TypeTreeFactory.GetTypeTree(obj, TransferInstructionFlags.SerializeGameRelease);
+                    TypeTree editorTree = engine.TypeTreeFactory.GetTypeTree(obj, editorFlags);
+                    TypeTree releaseTree = engine.TypeTreeFactory.GetTypeTree(obj, releaseFlags);
 
                     next.EditorRootNode = CreateRootNode(editorTree);
                     next.ReleaseRootNode = CreateRootNode(releaseTree);

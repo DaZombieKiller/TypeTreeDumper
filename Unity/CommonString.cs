@@ -21,7 +21,7 @@ namespace Unity
         public unsafe byte[] GetData()
         {
             if (BufferBegin == IntPtr.Zero || BufferEnd == IntPtr.Zero)
-                return new byte[0];
+                return Array.Empty<byte>();
 
             var source = (byte*)BufferBegin;
             var length = (byte*)BufferEnd - source - 1;

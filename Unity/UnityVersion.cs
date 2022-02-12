@@ -24,6 +24,18 @@ namespace Unity
 
         public readonly int Build;
 
+        public static readonly UnityVersion Unity2_5 = new UnityVersion(2, 5);
+
+        public static readonly UnityVersion Unity2_6 = new UnityVersion(2, 6);
+
+        public static readonly UnityVersion Unity3_0 = new UnityVersion(3, 0);
+
+        public static readonly UnityVersion Unity3_1 = new UnityVersion(3, 1);
+
+        public static readonly UnityVersion Unity3_2 = new UnityVersion(3, 2);
+
+        public static readonly UnityVersion Unity3_3 = new UnityVersion(3, 3);
+
         public static readonly UnityVersion Unity3_4 = new UnityVersion(3, 4);
 
         public static readonly UnityVersion Unity3_5 = new UnityVersion(3, 5);
@@ -85,6 +97,14 @@ namespace Unity
         public static readonly UnityVersion Unity2020_1 = new UnityVersion(2020, 1);
 
         public static readonly UnityVersion Unity2020_2 = new UnityVersion(2020, 2);
+
+        public static readonly UnityVersion Unity2020_3 = new UnityVersion(2020, 3);
+
+        public static readonly UnityVersion Unity2021_1 = new UnityVersion(2021, 1);
+
+        public static readonly UnityVersion Unity2021_2 = new UnityVersion(2021, 2);
+
+        public static readonly UnityVersion Unity2022_1 = new UnityVersion(2022, 1);
 
         public UnityVersion(int major, int minor)
             : this(major, minor, 0, 0, 0)
