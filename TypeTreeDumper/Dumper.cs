@@ -1,9 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using System.Linq;
 using Unity;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace TypeTreeDumper
 {
@@ -18,44 +18,42 @@ namespace TypeTreeDumper
             Directory.CreateDirectory(Options.OutputDirectory);
             TransferInstructionFlags releaseFlags = Options.TransferFlags | TransferInstructionFlags.SerializeGameRelease;
             TransferInstructionFlags editorFlags = Options.TransferFlags & (~TransferInstructionFlags.SerializeGameRelease);
-            if (engine.Version >= UnityVersion.Unity5_0 && options.ExportBinaryDump)
-            {
-                ExportStringData(engine.CommonString);
-            }
+            var info = UnityInfo.Create(engine, releaseFlags, editorFlags);
             if (options.ExportClassesJson)
             {
-                ExportClassesJson(engine.RuntimeTypes);
+                ExportClassesJson(info);
             }
             if (options.ExportTextDump)
             {
-                ExportRTTI(engine.RuntimeTypes);
-                ExportStructDump(engine, "structs.dump", releaseFlags);
-                ExportStructDump(engine, "editor_structs.dump", editorFlags);
+                ExportRTTI(info);
+                ExportStructDump(info, "structs.dump", true);
+                ExportStructDump(info, "editor_structs.dump", false);
+                ExportInfoJson(info);
             }
             if (options.ExportBinaryDump)
             {
+                if (engine.Version >= UnityVersion.Unity5_0)
+                {
+                    ExportStringData(engine.CommonString);
+                }
                 ExportStructData(engine, "structs.dat", releaseFlags);
                 ExportStructData(engine, "editor_structs.dat", editorFlags);
-            }
-            if (options.ExportTextDump)
-            {
-                ExportInfoJson(engine);
             }
             dumperEngine.InvokeExportCompleted(engine, options);
             Logger.Info("Success");
         }
 
-        static void ExportRTTI(RuntimeTypeArray runtimeTypes)
+        static void ExportRTTI(UnityInfo info)
         {
             Logger.Info("Writing RTTI...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "RTTI.dump"));
-            foreach (var type in runtimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
+            foreach (var type in info.Classes.OrderBy(x => x.TypeID))
             {
-                tw.WriteLine($"PersistentTypeID {(int)type.PersistentTypeID}");
+                tw.WriteLine($"PersistentTypeID {type.TypeID}");
                 tw.WriteLine($"    Name {type.Name}");
                 tw.WriteLine($"    Namespace {type.Namespace}");
                 tw.WriteLine($"    Module {type.Module}");
-                tw.WriteLine($"    Base {type.Base?.Name ?? ""}");
+                tw.WriteLine($"    Base {type.Base ?? ""}");
                 tw.WriteLine($"    DescendantCount {type.DescendantCount}");
                 tw.WriteLine($"    IsAbstract {type.IsAbstract}");
                 tw.WriteLine($"    IsSealed {type.IsSealed}");
@@ -65,30 +63,24 @@ namespace TypeTreeDumper
             }
         }
 
-        unsafe static void ExportStringData(CommonString strings)
+        static void ExportStringData(CommonString strings)
         {
-            if (strings.BufferBegin == IntPtr.Zero || strings.BufferEnd == IntPtr.Zero)
+            byte[] data = strings.GetData();
+            if (data.Length == 0)
                 return;
 
             Logger.Info("Writing common string buffer...");
-            var source = (byte*)strings.BufferBegin;
-            var length = (byte*)strings.BufferEnd - source - 1;
-            var buffer = new byte[length];
-
-            fixed (byte* destination = buffer)
-                Buffer.MemoryCopy(source, destination, length, length);
-
-            File.WriteAllBytes(Path.Combine(Options.OutputDirectory, "strings.dat"), buffer);
+            File.WriteAllBytes(Path.Combine(Options.OutputDirectory, "strings.dat"), data);
         }
 
-        unsafe static void ExportClassesJson(RuntimeTypeArray runtimeTypes)
+        static void ExportClassesJson(UnityInfo info)
         {
             Logger.Info("Writing classes.json...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, "classes.json"));
             tw.WriteLine("{");
 
-            var entries = from type in runtimeTypes.OrderBy(x => (int)x.PersistentTypeID) select $"  \"{(int)type.PersistentTypeID}\": \"{type.Name}\"";
-            var json    = string.Join(',' + tw.NewLine, entries);
+            IEnumerable<string> entries = from type in info.Classes.OrderBy(x => (int)x.TypeID) select $"  \"{(int)type.TypeID}\": \"{type.Name}\"";
+            var json = string.Join(',' + tw.NewLine, entries);
 
             tw.WriteLine(json);
             tw.WriteLine("}");
@@ -163,15 +155,15 @@ namespace TypeTreeDumper
             bw.Write(typeCount);
         }
 
-        unsafe static void ExportStructDump(UnityEngine engine, string fileName, TransferInstructionFlags flags)
+        static void ExportStructDump(UnityInfo info, string fileName, bool isRelease)
         {
             Logger.Info("Writing structure information dump...");
             using var tw = new StreamWriter(Path.Combine(Options.OutputDirectory, fileName));
 
             int typeCount = 0;
-            foreach(var type in engine.RuntimeTypes.ToArray().OrderBy(x => (int)x.PersistentTypeID))
+            foreach (var type in info.Classes.OrderBy(x => (int)x.TypeID))
             {
-                var iter        = type;
+                var iter = type;
                 var inheritance = string.Empty;
 
                 Logger.Verb("[{0}] Child: {1}::{2}, {3}, {4}",
@@ -179,7 +171,7 @@ namespace TypeTreeDumper
                     type.Namespace,
                     type.Name,
                     type.Module,
-                    type.PersistentTypeID
+                    type.TypeID
                 );
 
                 Logger.Verb("[{0}] Getting base type...", typeCount);
@@ -187,24 +179,24 @@ namespace TypeTreeDumper
                 {
                     inheritance += iter.Name;
 
-                    if (iter.Base == null)
+                    if (string.IsNullOrEmpty(iter.Base))
                         break;
 
                     inheritance += " <- ";
-                    iter         = iter.Base;
+                    iter = info.Classes.Single(c => c.Name == iter.Base);
                 }
 
-                tw.WriteLine("\n// classID{{{0}}}: {1}", (int)type.PersistentTypeID, inheritance);
+                tw.WriteLine("\n// classID{{{0}}}: {1}", (int)type.TypeID, inheritance);
                 iter = type;
 
                 while (iter.IsAbstract)
                 {
                     tw.WriteLine("// {0} is abstract", iter.Name);
 
-                    if (iter.Base == null)
+                    if (string.IsNullOrEmpty(iter.Base))
                         break;
 
-                    iter = iter.Base;
+                    iter = info.Classes.Single(c => c.Name == iter.Base);
                 }
 
                 Logger.Verb("[{0}] Base: {1}::{2}, {3}, {4}",
@@ -212,25 +204,18 @@ namespace TypeTreeDumper
                     iter.Namespace,
                     iter.Name,
                     iter.Module,
-                    iter.PersistentTypeID
+                    iter.TypeID
                 );
 
-                Logger.Verb("[{0}] Producing native object...", typeCount);
-                using var obj = engine.ObjectFactory.GetOrProduce(iter);
-
-                if (obj == null)
-                    continue;
-
-                Logger.Verb("[{0}] Produced object {1}. Persistent = {2}.", typeCount, obj.InstanceID, obj.IsPersistent);
-                Logger.Verb("[{0}] Generating type tree...", typeCount);
-                var tree = engine.TypeTreeFactory.GetTypeTree(obj, flags);
-                TypeTreeUtility.CreateTextDump(tree, tw);
+                var tree = isRelease ? iter.ReleaseRootNode : iter.EditorRootNode;
+                if(tree != null)
+                    TypeTreeUtility.CreateTextDump(tree, tw);
 
                 typeCount++;
             }
         }
 
-        unsafe static void ExportInfoJson(UnityEngine engine)
+        static void ExportInfoJson(UnityInfo info)
         {
             Logger.Info("Writing information json...");
             using var sw = new StreamWriter(Path.Combine(Options.OutputDirectory, "info.json"));
@@ -239,7 +224,6 @@ namespace TypeTreeDumper
             serializer.Formatting = Formatting.Indented;
             writer.Indentation = 1;
             writer.IndentChar = '\t';
-            var info = UnityInfo.Create(engine);
             serializer.Serialize(writer, info, typeof(UnityInfo));
         }
     }

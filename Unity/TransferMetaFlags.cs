@@ -3,7 +3,7 @@
 namespace Unity
 {
     [Flags]
-    public enum TransferMetaFlags
+    public enum TransferMetaFlags : uint
     {
         None                                   = 0,
         HideInEditor                           = 1 << 0,
