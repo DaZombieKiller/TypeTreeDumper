@@ -47,7 +47,7 @@ namespace Unity
 
             public V5_0(IntPtr ptr, SymbolResolver resolver, UnityVersion version)
             {
-                var cstr = resolver.ResolveFirstFunctionMatching<CStrDelegate>(
+                var cstr = (delegate* unmanaged[Thiscall]<void*, sbyte*>)resolver.ResolveFirstMatch(
                     new Regex(Regex.Escape("?c_str@?$basic_string@") + "*"));
                 TypeInfo = (RuntimeTypeInfo*)ptr;
                 var str = cstr(&TypeInfo->ClassName);

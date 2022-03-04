@@ -11,53 +11,29 @@ namespace Unity
 
         MemLabelId* kMemBaseObject;
 
-        readonly GetSpriteAtlasDatabaseDelegate s_GetSpriteAtlasDatabase;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetSpriteAtlasDatabaseDelegate();
+        readonly delegate* unmanaged[Cdecl]<void*> s_GetSpriteAtlasDatabase;
 
-        readonly GetSceneVisibilityStateDelegate s_GetSceneVisibilityState;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetSceneVisibilityStateDelegate();
+        readonly delegate* unmanaged[Cdecl]<void*> s_GetSceneVisibilityState;
 
-        readonly GetInspectorExpandedStateDelegate s_GetInspectorExpandedState;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetInspectorExpandedStateDelegate();
+        readonly delegate* unmanaged[Cdecl]<void*> s_GetInspectorExpandedState;
 
-        readonly GetAnnotationManagerDelegate s_GetAnnotationManager;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetAnnotationManagerDelegate();
+        readonly delegate* unmanaged[Cdecl]<void*> s_GetAnnotationManager;
 
-        readonly GetMonoManagerDelegate s_GetMonoManager;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetMonoManagerDelegate();
+        readonly delegate* unmanaged[Cdecl]<void*> s_GetMonoManager;
 
-        readonly ProduceDelegateV3_4 s_ProduceV3_4;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr ProduceDelegateV3_4(int classID, int instanceID, IntPtr baseAllocator, ObjectCreationMode creationMode);
+        readonly delegate* unmanaged[Cdecl]<int, int, void*, ObjectCreationMode, void*> s_ProduceV3_4;
 
-        readonly ProduceDelegateV3_5 s_ProduceV3_5;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr ProduceDelegateV3_5(int classID, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
+        readonly delegate* unmanaged[Cdecl]<int, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV3_5;
 
-        readonly ProduceDelegateV5_5 s_ProduceV5_5;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr ProduceDelegateV5_5(ref byte a, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
+        readonly delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV5_5;
 
-        readonly ProduceDelegateV2017_2 s_ProduceV2017_2;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr ProduceDelegateV2017_2(ref byte a, ref byte b, int instanceID, MemLabelId label, ObjectCreationMode creationMode);
+        readonly delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV2017_2;
 
-        readonly InstanceIDToObjectDelegate s_InstanceIDToObject;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr InstanceIDToObjectDelegate(int instanceID);
+        readonly delegate* unmanaged[Cdecl]<int, byte*> s_InstanceIDToObject;
 
-        readonly DestroyImmediateDelegate s_DestroyImmediate;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void DestroyImmediateDelegate(IntPtr objectPtr, bool allowDestroyingAssets);
+        readonly delegate* unmanaged[Cdecl]<void*, byte, void> s_DestroyImmediate;
 
-        readonly DestroyObjectFromScriptingImmediateDelegate s_DestroyObjectFromScriptingImmediate;
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void DestroyObjectFromScriptingImmediateDelegate(IntPtr objectPtr, bool allowDestroyingAssets);
+        readonly delegate* unmanaged[Cdecl]<void*, byte, void> s_DestroyObjectFromScriptingImmediate;
 
         bool HasGetSceneVisibilityState => version >= UnityVersion.Unity2019_1;
 
@@ -69,41 +45,41 @@ namespace Unity
             this.resolver = resolver;
             
             if (HasGetSpriteAtlasDatabase)
-                s_GetSpriteAtlasDatabase = resolver.ResolveFunction<GetSpriteAtlasDatabaseDelegate>($"?GetSpriteAtlasDatabase@@YAA{NameMangling.Ptr64}AVSpriteAtlasDatabase@@XZ");
+                s_GetSpriteAtlasDatabase = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetSpriteAtlasDatabase@@YAA{NameMangling.Ptr64}AVSpriteAtlasDatabase@@XZ");
 
             if (HasGetSceneVisibilityState)
-                s_GetSceneVisibilityState = resolver.ResolveFunction<GetSceneVisibilityStateDelegate>($"?GetSceneVisibilityState@@YAA{NameMangling.Ptr64}AVSceneVisibilityState@@XZ");
+                s_GetSceneVisibilityState = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetSceneVisibilityState@@YAA{NameMangling.Ptr64}AVSceneVisibilityState@@XZ");
 
-            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
-            s_GetInspectorExpandedState = resolver.ResolveFunction<GetInspectorExpandedStateDelegate>($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
-            s_GetAnnotationManager      = resolver.ResolveFunction<GetAnnotationManagerDelegate>($"?GetAnnotationManager@@YAA{NameMangling.Ptr64}AVAnnotationManager@@XZ");
-            s_GetMonoManager            = resolver.ResolveFunction<GetMonoManagerDelegate>($"?GetMonoManager@@YAA{NameMangling.Ptr64}AVMonoManager@@XZ");
+            s_GetInspectorExpandedState = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
+            s_GetInspectorExpandedState = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetInspectorExpandedState@@YAA{NameMangling.Ptr64}AVInspectorExpandedState@@XZ");
+            s_GetAnnotationManager      = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetAnnotationManager@@YAA{NameMangling.Ptr64}AVAnnotationManager@@XZ");
+            s_GetMonoManager            = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetMonoManager@@YAA{NameMangling.Ptr64}AVMonoManager@@XZ");
 
             if (version < UnityVersion.Unity3_5)
-                s_ProduceV3_4 = resolver.ResolveFunction<ProduceDelegateV3_4>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHP{NameMangling.Ptr64}AVBaseAllocator@@W4ObjectCreationMode@@@Z");
+                s_ProduceV3_4 = (delegate* unmanaged[Cdecl]<int, int, void*, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHP{NameMangling.Ptr64}AVBaseAllocator@@W4ObjectCreationMode@@@Z");
             else if (version < UnityVersion.Unity5_5)
-                s_ProduceV3_5 = resolver.ResolveFunction<ProduceDelegateV3_5>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z");
+                s_ProduceV3_5 = (delegate* unmanaged[Cdecl]<int, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z");
             else if(version < UnityVersion.Unity2017_2)
-                s_ProduceV5_5 = resolver.ResolveFunction<ProduceDelegateV5_5>($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
+                s_ProduceV5_5 = (delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
             else
-                s_ProduceV2017_2 = resolver.ResolveFunction<ProduceDelegateV2017_2>($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
+                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
 
             if (version < UnityVersion.Unity5_5)
             {
-                s_DestroyObjectFromScriptingImmediate = resolver.ResolveFunction<DestroyObjectFromScriptingImmediateDelegate>(
+                s_DestroyObjectFromScriptingImmediate = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve(
                     $"?DestroyObjectFromScriptingImmediate@Scripting@@YAXP{NameMangling.Ptr64}AVObject@@_N@Z",
                     $"?DestroyObjectFromScriptingImmediate@@YAXP{NameMangling.Ptr64}AVObject@@_N@Z"
                 );
             }
             else if (version < UnityVersion.Unity2019_2)
             {
-                s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AUMonoObject@@H@Z");
-                s_DestroyImmediate   = resolver.ResolveFunction<DestroyImmediateDelegate>($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z");
+                s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AUMonoObject@@H@Z");
+                s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z");
             }
             else
             {
-                s_InstanceIDToObject = resolver.ResolveFunction<InstanceIDToObjectDelegate>($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@H@Z");
-                s_DestroyImmediate   = resolver.ResolveFunction<DestroyImmediateDelegate>($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z");
+                s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@H@Z");
+                s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z");
             }
 
             if (version >= UnityVersion.Unity3_5)
@@ -154,10 +130,10 @@ namespace Unity
             if (type.IsAbstract)
                 return null;
 
-            IntPtr ptr;
+            void* ptr;
             if (version < UnityVersion.Unity3_5)
             {
-                ptr = s_ProduceV3_4((int)type.PersistentTypeID, instanceID, IntPtr.Zero, creationMode);
+                ptr = s_ProduceV3_4((int)type.PersistentTypeID, instanceID, null, creationMode);
             }
             else if (version < UnityVersion.Unity5_5)
             {
@@ -165,14 +141,16 @@ namespace Unity
             }
             else if (version < UnityVersion.Unity2017_2)
             {
-                ptr = s_ProduceV5_5(ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
+                fixed (byte* typePtr = &type.GetPinnableReference())
+                    ptr = s_ProduceV5_5(typePtr, instanceID, *kMemBaseObject, creationMode);
             }
             else
             {
                 // TODO: Why does this take two types?
-                ptr = s_ProduceV2017_2(ref type.GetPinnableReference(), ref type.GetPinnableReference(), instanceID, *kMemBaseObject, creationMode);
+                fixed (byte* typePtr = &type.GetPinnableReference())
+                    ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, *kMemBaseObject, creationMode);
             }
-            if (ptr == IntPtr.Zero) return null;
+            if (ptr == null) return null;
             return new NativeObject(ptr, this, type.PersistentTypeID, version);
         }
 
@@ -203,12 +181,12 @@ namespace Unity
             }
             if (version < UnityVersion.Unity5_5)
             {
-                s_DestroyObjectFromScriptingImmediate(obj.Pointer, false);
+                s_DestroyObjectFromScriptingImmediate(obj.Pointer, 0);
             }
             else
             {
                 var managed = s_InstanceIDToObject(obj.InstanceID);
-                s_DestroyImmediate(managed, false);
+                s_DestroyImmediate(managed, 0);
             }
         }
     }

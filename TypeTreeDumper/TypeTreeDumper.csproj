@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <RootNamespace>TypeTreeDumper</RootNamespace>
-        <TargetFramework>net472</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>TypeTreeDumper</RootNamespace>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="EasyHook" Version="2.7.7097" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-        <ProjectReference Include="..\Unity\Unity.csproj" />
-        <ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
-    </ItemGroup>
-    
-    <Import Project="../Dia2Lib/Dia2Lib.props" />
+  <ItemGroup>
+    <ProjectReference Include="..\Unity\Unity.csproj" />
+    <ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
+    <PackageReference Include="DetourSharp" Version="1.0.0" />
+  </ItemGroup>
+
+  <Import Project="../Dia2Lib/Dia2Lib.props" />
 </Project>

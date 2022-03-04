@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Linq;
 using Unity;
-using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace TypeTreeDumper
@@ -219,12 +219,10 @@ namespace TypeTreeDumper
         {
             Logger.Info("Writing information json...");
             using var sw = new StreamWriter(Path.Combine(Options.OutputDirectory, "info.json"));
-            using JsonTextWriter writer = new JsonTextWriter(sw);
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Formatting = Formatting.Indented;
-            writer.Indentation = 1;
-            writer.IndentChar = '\t';
-            serializer.Serialize(writer, info, typeof(UnityInfo));
+            sw.Write(JsonSerializer.Serialize(info, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }));
         }
     }
 }

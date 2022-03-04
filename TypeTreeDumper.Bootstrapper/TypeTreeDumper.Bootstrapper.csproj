@@ -1,19 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net472</TargetFramework>
+        <TargetFramework>net6.0-windows</TargetFramework>
         <LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.8.0" />
-        <PackageReference Include="EasyHook" Version="2.7.7097" />
-        <PackageReference Include="System.Management" Version="5.0.0" />
-        <ProjectReference Include="..\TypeTreeDumper\TypeTreeDumper.csproj" />
-        <ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="System.Management" />
+        <PackageReference Include="DetourSharp.Hosting" Version="1.0.0" />
+        <PackageReference Include="System.Management" Version="6.0.0" />
+		<ProjectReference Include="..\TypeTreeDumper\TypeTreeDumper.csproj" />
+		<ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
     </ItemGroup>
 </Project>

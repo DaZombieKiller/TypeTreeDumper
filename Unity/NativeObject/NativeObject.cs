@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 
 namespace Unity
 {
-    public partial class NativeObject : IDisposable
+    public unsafe partial class NativeObject : IDisposable
     {
         INativeObjectImpl nativeObject;
 
@@ -13,11 +13,11 @@ namespace Unity
 
         public int InstanceID => nativeObject.InstanceID;
 
-        public IntPtr Pointer => nativeObject.Pointer;
+        public void* Pointer => nativeObject.Pointer;
 
-        public NativeObject(IntPtr ptr, NativeObjectFactory factory, PersistentTypeID persistentTypeID, UnityVersion version)
+        public NativeObject(void* ptr, NativeObjectFactory factory, PersistentTypeID persistentTypeID, UnityVersion version)
         {
-            if (ptr == IntPtr.Zero)
+            if (ptr == null)
                 throw new ArgumentNullException(nameof(ptr));
 
             if (version < UnityVersion.Unity5_0)
@@ -51,7 +51,7 @@ namespace Unity
         interface INativeObjectImpl
         {
             int InstanceID { get; }
-            IntPtr Pointer { get; }
+            void* Pointer { get; }
             public byte TemporaryFlags { get;  }
             public HideFlags HideFlags { get; }
             public bool IsPersistent { get; }

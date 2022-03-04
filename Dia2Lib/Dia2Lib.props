@@ -1,11 +1,18 @@
 <Project>
-    <PropertyGroup>
-        <DiaSdkDir>$(VSInstallRoot)\DIA SDK</DiaSdkDir>
-    </PropertyGroup>
+  <!--
+    $(VSInstallRoot) is only available from within Visual Studio, but
+    inside the developer command prompt, $(VSInstallDir) is available.
+  -->
+  <PropertyGroup Condition="'$(VSInstallRoot)' == ''">
+    <VSInstallRoot>$(VSInstallDir)</VSInstallRoot>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <Reference Include="Dia2Lib" HintPath="$(MSBuildThisFileDirectory)Dia2Lib.dll" />
-        <Content Include="$(DiaSdkDir)\bin\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-        <Content Include="$(DiaSdkDir)\bin\amd64\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="%(Filename)_amd64%(Extension)" />
-    </ItemGroup>
+  <PropertyGroup>
+    <DiaSdkDir>$(VSInstallRoot)\DIA SDK</DiaSdkDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="$(DiaSdkDir)\bin\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(DiaSdkDir)\bin\amd64\msdia140.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="%(Filename)_amd64%(Extension)" />
+  </ItemGroup>
 </Project>

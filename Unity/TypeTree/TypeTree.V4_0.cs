@@ -13,12 +13,7 @@ namespace Unity
     {
         unsafe class V4_0 : ITypeTreeImpl
         {
-            [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            delegate void TypeTreeDelegate(out TypeTree tree);
-
-            readonly CStrDelegate s_CStr;
-            [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            unsafe delegate IntPtr CStrDelegate(ref TypeTreeString self);
+            readonly delegate* unmanaged[Thiscall]<TypeTreeString*, sbyte*> s_CStr;
 
             internal TypeTree Tree;
 
@@ -40,10 +35,12 @@ namespace Unity
 
             public V4_0(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = resolver.ResolveFunction<TypeTreeDelegate>("??0TypeTree@@QAE@XZ");
-                constructor.Invoke(out Tree);
+                TypeTree tree;
+                var constructor = (delegate* unmanaged[Thiscall]<TypeTree*, void>)resolver.Resolve("??0TypeTree@@QAE@XZ");
+                constructor(&tree);
+                Tree = tree;
 
-                s_CStr = resolver.ResolveFirstFunctionMatching<CStrDelegate>(
+                s_CStr = (delegate* unmanaged[Thiscall]<TypeTreeString*, sbyte*>)resolver.ResolveFirstMatch(
                     new Regex(Regex.Escape("?c_str@?$basic_string@") + "*"));
             }
 
@@ -59,7 +56,8 @@ namespace Unity
                 m_StringBufferIndices = new Dictionary<string, uint>();
                 m_Nodes = new List<TypeTreeNode>();
                 m_ByteOffsets = new List<uint>();
-                var type = Marshal.PtrToStringAnsi(s_CStr(ref Tree.m_Type));
+                var tts = Tree.m_Type;
+                var type = Marshal.PtrToStringAnsi((IntPtr)s_CStr(&tts));
                 sw = new StreamWriter($"{type}.txt");
                 CreateNodes(owner, ref m_Nodes, ref Tree);
                 sw.Dispose();
@@ -100,7 +98,8 @@ namespace Unity
 
             uint GetOrCreateStringIndex(TypeTreeString typeTreeString)
             {
-                var str = Marshal.PtrToStringAnsi(s_CStr(ref typeTreeString));
+                var tts = typeTreeString;
+                var str = Marshal.PtrToStringAnsi((IntPtr)s_CStr(&tts));
                 if (m_StringBufferIndices.TryGetValue(str, out var key))
                 {
                     return key;

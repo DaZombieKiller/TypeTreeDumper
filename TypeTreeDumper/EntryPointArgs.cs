@@ -1,13 +1,13 @@
-using System;
+using TerraFX.Interop.Windows;
 
 namespace TypeTreeDumper
 {
-    [Serializable]
     public struct EntryPointArgs
     {
-        public string OutputPath;
-        public string ProjectPath;
-        public bool Verbose;
-        public bool Silent;
+        public string OutputPath { get; set; }
+        public string ProjectPath { get; set; }
+        public bool Verbose { get; set; }
+        public bool Silent { get; set; }
+        public ulong ThreadHandle { get; set; }
     }
 }

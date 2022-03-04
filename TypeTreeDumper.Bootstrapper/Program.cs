@@ -5,12 +5,15 @@ using System.Text;
 using System.Management;
 using System.Diagnostics;
 using System.Collections.Generic;
+using DetourSharp.Hosting;
 using CommandLine;
-using EasyHook;
+using TerraFX.Interop.Windows;
+using static TerraFX.Interop.Windows.Windows;
+using static TerraFX.Interop.Windows.CREATE;
 
 namespace TypeTreeDumper
 {
-    internal class Options
+    class Options
     {
         [Value(0, Required = true, HelpText = "Path to the Unity executable.")]
         public string UnityExePath { get; set; }
@@ -27,13 +30,27 @@ namespace TypeTreeDumper
 
     class Program
     {
+        const string DefaultRuntimeConfig = @"{
+  ""runtimeOptions"": {
+    ""tfm"": ""net6.0"",
+    ""rollForward"": ""LatestMinor"",
+    ""framework"": {
+      ""name"": ""Microsoft.NETCore.App"",
+      ""version"": ""6.0.0""
+    },
+    ""configProperties"": {
+      ""System.Reflection.Metadata.MetadataUpdater.IsSupported"": false
+    }
+  }
+}";
+
         static void Main(string[] args)
         {
-            CommandLine.Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(options => Main(options) );
+            Parser.Default.ParseArguments<Options>(args)
+                .WithParsed(options => Run(options) );
         }
 
-        static void Main(Options options)
+        static unsafe void Run(Options options)
         {
             var version          = FileVersionInfo.GetVersionInfo(options.UnityExePath);
             var projectDirectory = Path.Combine(System.AppContext.BaseDirectory, "DummyProjects", "DummyProject-" + version.FileVersion);
@@ -70,23 +87,46 @@ namespace TypeTreeDumper
                 }
             }
 
-            RemoteHooking.CreateAndInject(options.UnityExePath,
-                CreateCommandLine(commandLineArgs),
-                InProcessCreationFlags: 0,
-                InjectionOptions.DoNotRequireStrongName,
-                typeof(EntryPoint).Assembly.Location,
-                typeof(EntryPoint).Assembly.Location,
-                out int processID,
-                new EntryPointArgs
+            STARTUPINFOW si;
+            PROCESS_INFORMATION pi;
+            
+            fixed (char* pAppName = options.UnityExePath)
+            fixed (char* pCmdLine = CreateCommandLine(commandLineArgs))
+            {
+                if (!CreateProcessW((ushort*)pAppName, (ushort*)pCmdLine, null, null, true, CREATE_SUSPENDED, null, null, &si, &pi))
                 {
-                    OutputPath  = Path.GetFullPath(options.OutputDirectory ?? Path.Combine(System.AppContext.BaseDirectory, "Output")),
-                    ProjectPath = projectDirectory,
-                    Verbose = options.Verbose,
-                    Silent = options.Silent
+                    Console.WriteLine("Failed to start Unity process.");
+                    return;
                 }
-            );
+            }
 
-            Process.GetProcessById(processID).WaitForExit();
+            // The handle we get from CreateProcessW is only valid for this process,
+            // so we need to duplicate the handle to pass it to the Unity editor process.
+            HANDLE hThread;
+            DuplicateHandle(GetCurrentProcess(), pi.hThread, pi.hProcess, &hThread, 0, true, DUPLICATE_SAME_ACCESS);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+
+            var config = Path.Combine(AppContext.BaseDirectory, "TypeTreeDumper.runtimeconfig.json");
+
+            if (!File.Exists(config))
+            {
+                config = Path.GetTempFileName();
+                File.WriteAllText(config, DefaultRuntimeConfig);
+            }
+
+            using var runtime = new RemoteRuntime((int)pi.dwProcessId);
+            runtime.Initialize(config);
+            runtime.Invoke(((Delegate)EntryPoint.Main).Method, new EntryPointArgs
+            {
+                OutputPath = Path.GetFullPath(options.OutputDirectory ?? Path.Combine(System.AppContext.BaseDirectory, "Output")),
+                ProjectPath = projectDirectory,
+                Verbose = options.Verbose,
+                Silent = options.Silent,
+                ThreadHandle = (ulong)hThread,
+            });
+
+            Process.GetProcessById((int)pi.dwProcessId).WaitForExit();
         }
 
         static ManagementBaseObject GetManagementObjectForProcess(Process process)

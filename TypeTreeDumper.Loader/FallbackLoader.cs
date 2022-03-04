@@ -7,6 +7,7 @@ namespace TypeTreeDumper
     {
         public const string CallbackAddressName = "CALLBACK_ADDRESS";
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void CallbackDelegate();
 
         public static void Initialize()

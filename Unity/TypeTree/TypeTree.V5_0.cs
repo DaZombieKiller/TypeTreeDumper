@@ -25,8 +25,10 @@ namespace Unity
 
             public V5_0(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = resolver.ResolveFunction<TypeTreeDelegate>($"??0TypeTree@@Q{NameMangling.Ptr64}AA@XZ");
-                constructor.Invoke(out Tree);
+                TypeTree tree;
+                var constructor = (delegate* unmanaged[Cdecl]<TypeTree*, void>)resolver.Resolve($"??0TypeTree@@Q{NameMangling.Ptr64}AA@XZ");
+                constructor(&tree);
+                Tree = tree;
             }
 
             public ref byte GetPinnableReference()

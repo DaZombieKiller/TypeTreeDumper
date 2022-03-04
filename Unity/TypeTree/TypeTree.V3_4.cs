@@ -12,12 +12,7 @@ namespace Unity
     {
         unsafe class V3_4 : ITypeTreeImpl
         {
-            [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            delegate void TypeTreeDelegate(out TypeTree tree);
-
-            readonly CStrDelegate s_CStr;
-            [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-            unsafe delegate IntPtr CStrDelegate(ref TypeTreeString self);
+            readonly delegate* unmanaged[Thiscall]<TypeTreeString*, sbyte*> s_CStr;
 
             internal TypeTree Tree;
 
@@ -38,10 +33,12 @@ namespace Unity
 
             public V3_4(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = resolver.ResolveFunction<TypeTreeDelegate>($"??0TypeTree@@QAE@XZ");
-                constructor.Invoke(out Tree);
+                TypeTree tree;
+                var constructor = (delegate* unmanaged[Thiscall]<TypeTree*, void>)resolver.Resolve($"??0TypeTree@@QAE@XZ");
+                constructor(&tree);
+                Tree = tree;
 
-                s_CStr = resolver.ResolveFirstFunctionMatching<CStrDelegate>(
+                s_CStr = (delegate* unmanaged[Thiscall]<TypeTreeString*, sbyte*>)resolver.ResolveFirstMatch(
                     new Regex(Regex.Escape("?c_str@?$basic_string@") + "*"));
             }
 
@@ -88,7 +85,8 @@ namespace Unity
 
             uint GetOrCreateStringIndex(TypeTreeString typeTreeString)
             {
-                var str = Marshal.PtrToStringAnsi(s_CStr(ref typeTreeString));
+                var tts = typeTreeString;
+                var str = Marshal.PtrToStringAnsi((IntPtr)s_CStr(&typeTreeString));
                 if (m_StringBufferIndices.TryGetValue(str, out var key))
                 {
                     return key;

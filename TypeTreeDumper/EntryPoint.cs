@@ -2,15 +2,17 @@
 using System.IO;
 using System.Threading;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using EasyHook;
+using DetourSharp;
 using Unity;
+using TerraFX.Interop.Windows;
+using static TerraFX.Interop.Windows.Windows;
 
 namespace TypeTreeDumper
 {
-    public class EntryPoint : IEntryPoint
+    public static unsafe class EntryPoint
     {
         static ProcessModule module;
 
@@ -24,50 +26,28 @@ namespace TypeTreeDumper
 
         static FileVersionInfo VersionInfo;
 
-        static LocalHook AfterEverythingLoadedHook;
+        static Detour AfterEverythingLoadedDetour;
 
-        static LocalHook PlayerInitEngineNoGraphicsHook;
+        static Detour PlayerInitEngineNoGraphicsDetour;
 
-        static LocalHook ValidateDatesHook;
+        static Detour ValidateDatesDetour;
 
-        static LocalHook InitializePackageManagerHook;
-
-        static FallbackLoader.CallbackDelegate FallbackLoaderCallback;
-
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        delegate void AfterEverythingLoadedDelegate(IntPtr app);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.U1)]
-        delegate bool PlayerInitEngineNoGraphicsDelegate(IntPtr a, IntPtr b);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void UnityVersionDelegate(out UnityVersion version, [MarshalAs(UnmanagedType.LPStr)] string value);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr GetUnityVersionDelegate();
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate IntPtr MonoStringToUTF8Delegate(IntPtr monoString);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void InitializePackageManagerDelegate();
+        static Detour InitializePackageManagerDetour;
 
         static void AttachToParentConsole()
         {
-            Kernel32.FreeConsole();
-            Kernel32.AttachConsole(Kernel32.ATTACH_PARENT_PROCESS);
+            FreeConsole();
+            AttachConsole(ATTACH_PARENT_PROCESS);
             Console.SetIn(new StreamReader(Console.OpenStandardInput()));
             Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
             Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
         }
 
-        [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public EntryPoint(RemoteHooking.IContext context, EntryPointArgs args)
+        public static void Main(EntryPointArgs args)
         {
             try
             {
-                module = Process.GetCurrentProcess().MainModule;
+                module      = Process.GetCurrentProcess().MainModule;
                 VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
 
                 // Can cause 2017.1 & 2017.2 to hang, cause is currently unknown but may be
@@ -75,24 +55,11 @@ namespace TypeTreeDumper
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
                     AttachToParentConsole();
 
-                OutputPath = args.OutputPath;
+                OutputPath  = args.OutputPath;
                 ProjectPath = args.ProjectPath;
-                resolver = new DiaSymbolResolver(module);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex);
-                throw;
-            }
-        }
+                resolver    = new DiaSymbolResolver(module);
+                void* address;
 
-        [SuppressMessage("Style", "IDE0060", Justification = "Required by EasyHook")]
-        public void Run(RemoteHooking.IContext context, EntryPointArgs args)
-        {
-            IntPtr address;
-
-            try
-            {
                 ConsoleLogger.Initialize(args.Silent, args.Verbose);
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
                     AttachToParentConsole();
@@ -101,8 +68,8 @@ namespace TypeTreeDumper
                 {
                     if (resolver.TryResolve($"?Initialize@Api@PackageManager@@I{NameMangling.Ptr64}AAXXZ", out address))
                     {
-                        InitializePackageManagerHook = LocalHook.Create(address, new InitializePackageManagerDelegate(InitializePackageManager), null);
-                        InitializePackageManagerHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                        InitializePackageManagerDetour = new Detour(address, (delegate* unmanaged[Cdecl]<void>)&InitializePackageManager);
+                        InitializePackageManagerDetour.Attach();
                     }
                 }
 
@@ -110,29 +77,29 @@ namespace TypeTreeDumper
                 {
                     InitializeFallbackLoader();
                 }
-                else if (resolver.TryResolveFirstMatching(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
+                else if (resolver.TryResolveFirstMatch(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
                 {
-                    AfterEverythingLoadedHook = LocalHook.Create(address, new AfterEverythingLoadedDelegate(AfterEverythingLoaded), null);
-                    AfterEverythingLoadedHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                    AfterEverythingLoadedDetour = new Detour(address, (delegate* unmanaged[Cdecl]<void*, void>)&AfterEverythingLoaded);
+                    AfterEverythingLoadedDetour.Attach();
                 }
                 else
                 {
-                    address = resolver.ResolveFirstMatching(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
-                    PlayerInitEngineNoGraphicsHook = LocalHook.Create(address, new PlayerInitEngineNoGraphicsDelegate(PlayerInitEngineNoGraphics), null);
-                    PlayerInitEngineNoGraphicsHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                    address = resolver.ResolveFirstMatch(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
+                    PlayerInitEngineNoGraphicsDetour = new Detour(address, (delegate* unmanaged[Cdecl]<void*, void*, byte>)&PlayerInitEngineNoGraphics);
+                    PlayerInitEngineNoGraphicsDetour.Attach();
                 }
 
                 // Work around Unity 4.0 to 4.3 licensing bug
                 if (VersionInfo.FileMajorPart == 4 && VersionInfo.FileMinorPart <= 3)
                 {
                     address = resolver.Resolve($"?ValidateDates@LicenseManager@@QAEHP{NameMangling.Ptr64}AVDOMDocument@xercesc_3_1@@@Z");
-                    ValidateDatesHook = LocalHook.Create(address, new ValidateDatesDelegate(ValidateDates), null);
-                    ValidateDatesHook.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                    ValidateDatesDetour = new Detour(address, (delegate* unmanaged[Thiscall]<void*, void*, int>)&ValidateDates);
+                    ValidateDatesDetour.Attach();
                 }
 
                 OnEngineInitialized += PluginManager.LoadPlugins;
                 OnEngineInitialized += ExecuteDumper;
-                RemoteHooking.WakeUpProcess();
+                ResumeThread((HANDLE)args.ThreadHandle);
                 Thread.Sleep(Timeout.Infinite);
             }
             catch (Exception ex)
@@ -140,11 +107,6 @@ namespace TypeTreeDumper
                 Logger.Error(ex);
                 throw;
             }
-        }
-
-        static void InitializePackageManager()
-        {
-            // Stubbed
         }
 
         static ProcessModule FindProcessModule(Regex regex)
@@ -162,65 +124,59 @@ namespace TypeTreeDumper
         {
             Logger.Info("Executing Dumper");
             UnityVersion version;
-            GetUnityVersionDelegate GetUnityVersion;
+            delegate* unmanaged[Cdecl]<sbyte*> GetUnityVersion;
 
-            DumperEngine dumperEngine = new DumperEngine();
+            var dumperEngine = new DumperEngine();
             PluginManager.InitializePlugins(dumperEngine);
 
-            if (resolver.TryResolveFunction($"?GameEngineVersion@PlatformWrapper@UnityEngine@@SAP{NameMangling.Ptr64}BDXZ", out GetUnityVersion))
+            if (resolver.TryResolve($"?GameEngineVersion@PlatformWrapper@UnityEngine@@SAP{NameMangling.Ptr64}BDXZ", out *(void**)&GetUnityVersion))
             {
-                var ParseUnityVersion = resolver.ResolveFunction<UnityVersionDelegate>(
+                var ParseUnityVersion = (delegate* unmanaged[Cdecl]<UnityVersion*, sbyte*, void>)resolver.Resolve(
                     $"??0UnityVersion@@Q{NameMangling.Ptr64}AA@P{NameMangling.Ptr64}BD@Z",
                     $"??0UnityVersion@@QAE@P{NameMangling.Ptr64}BD@Z"
                 );
 
-                ParseUnityVersion(out version, Marshal.PtrToStringAnsi(GetUnityVersion()));
+                ParseUnityVersion(&version, GetUnityVersion());
             }
             else
             {
-                GetUnityVersion = resolver.ResolveFunction<GetUnityVersionDelegate>(
+                *(void**)&GetUnityVersion = resolver.Resolve(
                     $"?Application_Get_Custom_PropUnityVersion@@YAP{NameMangling.Ptr64}AUMonoString@@XZ",
                     $"?Application_Get_Custom_PropUnityVersion@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeStringPtrOpaque@@XZ"
                 );
 
                 var mono = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
-                var MonoStringToUTF8 = Kernel32.GetProcAddress<MonoStringToUTF8Delegate>(mono, "mono_string_to_utf8");
-                version = new UnityVersion(Marshal.PtrToStringAnsi(MonoStringToUTF8(GetUnityVersion())));
+                var MonoStringToUTF8 = (delegate* unmanaged[Cdecl]<sbyte*, void*>)NativeLibrary.GetExport(mono, "mono_string_to_utf8");
+                version = new UnityVersion(Marshal.PtrToStringAnsi((IntPtr)MonoStringToUTF8(GetUnityVersion())));
             }
 
             Dumper.Execute(new UnityEngine(version, resolver), new ExportOptions(OutputPath), dumperEngine);
         }
 
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        delegate int ValidateDatesDelegate(IntPtr @this, IntPtr param1);
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+        static void InitializePackageManager()
+        {
+        }
 
-        static int ValidateDates(IntPtr @this, IntPtr param1)
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvThiscall) })]
+        static int ValidateDates(void* @this, void* param1)
         {
             Logger.Info("Validating dates");
             return 0;
         }
 
-        static bool PlayerInitEngineNoGraphics(IntPtr a, IntPtr b)
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl)})]
+        static byte PlayerInitEngineNoGraphics(void* a, void* b)
         {
-            using (HookRuntimeInfo.Handle)
-            {
-                var bypass = HookRuntimeInfo.Handle.HookBypassAddress;
-                var method = Marshal.GetDelegateForFunctionPointer<PlayerInitEngineNoGraphicsDelegate>(bypass);
-                method.Invoke(a, b);
-            }
-
+            ((delegate* unmanaged[Cdecl]<void*, void*, byte>)PlayerInitEngineNoGraphicsDetour.TrampolineAddress)(a, b);
             HandleEngineInitialization();
-            return true;
+            return 1;
         }
 
-        static void AfterEverythingLoaded(IntPtr app)
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+        static void AfterEverythingLoaded(void* app)
         {
-            using (HookRuntimeInfo.Handle)
-            {
-                var bypass = HookRuntimeInfo.Handle.HookBypassAddress;
-                var method = Marshal.GetDelegateForFunctionPointer<AfterEverythingLoadedDelegate>(bypass);
-                method.Invoke(app);
-            }
+            ((delegate* unmanaged[Cdecl]<void*, void>)AfterEverythingLoadedDetour.TrampolineAddress)(app);
             HandleEngineInitialization();
         }
 
@@ -242,19 +198,24 @@ namespace TypeTreeDumper
             }
         }
 
-        void InitializeFallbackLoader()
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+        static void FallbackLoaderCallback()
+        {
+            HandleEngineInitialization();
+        }
+
+        static void InitializeFallbackLoader()
         {
             Logger.Info("Initializing fallback loader...");
-            FallbackLoaderCallback = new FallbackLoader.CallbackDelegate(HandleEngineInitialization);
             var source      = typeof(FallbackLoader).Assembly.Location;
             var destination = Path.Combine(ProjectPath, "Assets");
-            var address     = Marshal.GetFunctionPointerForDelegate(FallbackLoaderCallback).ToInt64();
+            var address     = (delegate* unmanaged[Cdecl]<void>)&FallbackLoaderCallback;
 
             if (!Directory.Exists(destination))
                 Directory.CreateDirectory(destination);
 
             File.Copy(source, Path.Combine(destination, Path.GetFileName(source)), overwrite: true);
-            Environment.SetEnvironmentVariable(FallbackLoader.CallbackAddressName, address.ToString());
+            Environment.SetEnvironmentVariable(FallbackLoader.CallbackAddressName, new IntPtr(address).ToString());
         }
     }
 }

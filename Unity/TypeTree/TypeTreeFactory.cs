@@ -11,15 +11,9 @@ namespace Unity
 
         readonly SymbolResolver resolver;
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        unsafe delegate bool GetTypeTreeDelegate(IntPtr @object, TransferInstructionFlags flags, void* tree);
+        readonly delegate* unmanaged[Cdecl]<void*, TransferInstructionFlags, void*, byte> getTypeTree;
 
-        readonly GetTypeTreeDelegate getTypeTree;
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        delegate void GenerateTypeTreeDelegate(IntPtr @object, void* tree, TransferInstructionFlags flags);
-
-        readonly GenerateTypeTreeDelegate generateTypeTree;
+        readonly delegate* unmanaged[Cdecl]<void*, void*, TransferInstructionFlags, void> generateTypeTree;
 
         bool HasGetTypeTree => version.Major >= 2019;
 
@@ -30,10 +24,10 @@ namespace Unity
             this.strings  = strings;
 
             if (HasGetTypeTree)
-                getTypeTree = resolver.ResolveFunction<GetTypeTreeDelegate>($"?GetTypeTree@TypeTreeCache@@YA_NP{NameMangling.Ptr64}BVObject@@W4TransferInstructionFlags@@A{NameMangling.Ptr64}AVTypeTree@@@Z");
+                getTypeTree = (delegate* unmanaged[Cdecl]<void*, TransferInstructionFlags, void*, byte>)resolver.Resolve($"?GetTypeTree@TypeTreeCache@@YA_NP{NameMangling.Ptr64}BVObject@@W4TransferInstructionFlags@@A{NameMangling.Ptr64}AVTypeTree@@@Z");
             else
             {
-                generateTypeTree = resolver.ResolveFunction<GenerateTypeTreeDelegate>(
+                generateTypeTree = (delegate* unmanaged[Cdecl]<void*, void*, TransferInstructionFlags, void>)resolver.Resolve(
                     $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}BVObject@@A{NameMangling.Ptr64}AVTypeTree@@W4TransferInstructionFlags@@@Z",
                     $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}AVObject@@P{NameMangling.Ptr64}AVTypeTree@@W4TransferInstructionFlags@@@Z",
                     $"?GenerateTypeTree@@YAXA{NameMangling.Ptr64}AVObject@@P{NameMangling.Ptr64}AVTypeTree@@H@Z"
@@ -49,7 +43,7 @@ namespace Unity
             {
                 if (HasGetTypeTree)
                 {
-                    if (!getTypeTree(@object.Pointer, flags, pointer))
+                    if (getTypeTree(@object.Pointer, flags, pointer) == 0)
                     {
                         throw new InvalidOperationException("Failed to get type tree");
                     }

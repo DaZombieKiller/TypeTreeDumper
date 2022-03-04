@@ -13,12 +13,6 @@ namespace Unity
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         unsafe delegate NativeTypeArray* GetRuntimeTypesDelegate();
 
-        [UnmanagedFunctionPointer(CallingConvention.ThisCall)]
-        unsafe delegate char* CStrDelegate(IntPtr @this);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        unsafe delegate IntPtr ClassIDToRTTI(int classID);
-
         public RuntimeTypeInfo this[int index] => types[index];
 
         //The number of runtime types varies from version to version, we need a limit that is at least as 
@@ -51,22 +45,22 @@ namespace Unity
             }
             else 
             {
-                ClassIDToRTTI ClassIDToRTTI;
+                delegate* unmanaged[Cdecl]<int, void*> ClassIDToRTTI;
 
                 if (version >= UnityVersion.Unity5_4)
-                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@@H@Z");
+                    *(void**)&ClassIDToRTTI = resolver.Resolve($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@@H@Z");
                 else if (version >= UnityVersion.Unity5_0)
-                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@1@H@Z");
+                    *(void**)&ClassIDToRTTI = resolver.Resolve($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@1@H@Z");
                 else
-                    ClassIDToRTTI = resolver.ResolveFunction<ClassIDToRTTI>($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@1@H@Z");
+                    *(void**)&ClassIDToRTTI = resolver.Resolve($"?ClassIDToRTTI@Object@@SAP{NameMangling.Ptr64}AURTTI@1@H@Z");
 
                 types = new List<RuntimeTypeInfo>();
                 for(int i = 0; i < MaxRuntimeTypeId; i++)
                 {
                     var info = ClassIDToRTTI(i);
-                    if(info != IntPtr.Zero)
+                    if(info != null)
                     {
-                        types.Add(new RuntimeTypeInfo(info, resolver, version));
+                        types.Add(new RuntimeTypeInfo((IntPtr)info, resolver, version));
                     }
                 }
             }

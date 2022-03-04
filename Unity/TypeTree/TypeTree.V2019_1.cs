@@ -20,14 +20,13 @@ namespace Unity
 
             private TypeTreeNode[] m_Nodes;
 
-            [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-            delegate void TypeTreeDelegate(out TypeTree tree, MemLabelId* label, bool allocatePrivateData);
-
             public V2019_1(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = resolver.ResolveFunction<TypeTreeDelegate>($"??0TypeTree@@Q{NameMangling.Ptr64}AA@A{NameMangling.Ptr64}BUMemLabelId@@_N@Z");
+                var constructor = (delegate* unmanaged[Cdecl]<TypeTree*, MemLabelId*, byte, void>)resolver.Resolve($"??0TypeTree@@Q{NameMangling.Ptr64}AA@A{NameMangling.Ptr64}BUMemLabelId@@_N@Z");
                 var label = resolver.Resolve<MemLabelId>("?kMemTypeTree@@3UMemLabelId@@A");
-                constructor.Invoke(out Tree, label, allocatePrivateData: false);
+                TypeTree tree;
+                constructor(&tree, label, 0);
+                Tree = tree;
             }
 
             public ref byte GetPinnableReference()

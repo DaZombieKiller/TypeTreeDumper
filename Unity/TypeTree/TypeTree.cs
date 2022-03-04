@@ -38,7 +38,7 @@ namespace Unity
         public string GetString(uint offset)
         {
             if (offset > int.MaxValue)
-                return Marshal.PtrToStringAnsi(IntPtr.Add(strings.BufferBegin, (int)(int.MaxValue & offset)));
+                return Marshal.PtrToStringAnsi((IntPtr)(strings.BufferBegin + (int)(int.MaxValue & offset)));
 
             string str = "";
             for(int i = (int)offset; tree.StringBuffer[i] != 0; i++)

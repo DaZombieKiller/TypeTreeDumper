@@ -1,29 +1,38 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace Unity
 {
-    public abstract class SymbolResolver
+    public abstract unsafe class SymbolResolver
     {
-        protected abstract IntPtr GetAddressOrZero(string name);
+        protected abstract void* GetAddressOrZero(string name);
 
         public abstract IEnumerable<string> FindSymbolsMatching(Regex expression);
 
-        public IntPtr Resolve(string name)
+        public void* Resolve(string name)
         {
-            if (TryResolve(name, out IntPtr address))
+            if (TryResolve(name, out void* address))
                 return address;
 
             throw new UnresolvedSymbolException(name);
         }
 
-        public bool TryResolve(string name, out IntPtr address)
+        public void* Resolve(params string[] names)
+        {
+            foreach (string name in names)
+            {
+                if (TryResolve(name, out void* address))
+                    return address;
+            }
+
+            throw new UnresolvedSymbolException(string.Join(", ", names));
+        }
+
+        public bool TryResolve(string name, out void* address)
         {
             address = GetAddressOrZero(name);
-            return address != IntPtr.Zero;
+            return address != null;
         }
 
         public unsafe bool TryResolve<T>(string name, out T* address)
@@ -31,35 +40,6 @@ namespace Unity
         {
             address = (T*)GetAddressOrZero(name);
             return address != null;
-        }
-
-        public bool TryResolveFunction<T>(string name, out T function)
-            where T : Delegate
-        {
-            var address = GetAddressOrZero(name);
-            function    = address != IntPtr.Zero ? Marshal.GetDelegateForFunctionPointer<T>(address) : null;
-            return function != null;
-        }
-
-        public T ResolveFunction<T>(params string[] names)
-            where T : Delegate
-        {
-            foreach (string name in names)
-            {
-                if (TryResolveFunction(name, out T function))
-                    return function;
-            }
-
-            throw new UnresolvedSymbolException(string.Join(", ", names));
-        }
-
-        public T ResolveFunction<T>(string name)
-            where T : Delegate
-        {
-            if (TryResolveFunction(name, out T del))
-                return del;
-
-            throw new UnresolvedSymbolException(name);
         }
 
         public unsafe T* Resolve<T>(string name)
@@ -83,42 +63,29 @@ namespace Unity
             throw new UnresolvedSymbolException(string.Join(", ", names));
         }
 
-        public bool TryResolveFirstMatching(Regex regex, out IntPtr address)
+        public bool TryResolveFirstMatch(Regex regex, out void* address)
         {
             var name = FindSymbolsMatching(regex).FirstOrDefault();
 
             if (string.IsNullOrEmpty(name))
             {
-                address = IntPtr.Zero;
+                address = null;
                 return false;
             }
 
             address = GetAddressOrZero(name);
-            return address != IntPtr.Zero;
+            return address != null;
         }
 
-        public unsafe bool TryResolveFirstMatching<T>(Regex regex, out T* address)
+        public unsafe bool TryResolveFirstMatch<T>(Regex regex, out T* address)
             where T : unmanaged
         {
-            bool success = TryResolveFirstMatching(regex, out IntPtr ptr);
+            bool success = TryResolveFirstMatch(regex, out void* ptr);
             address      = (T*)ptr;
             return success;
         }
 
-        public bool TryResolveFirstFunctionMatching<T>(Regex regex, out T function)
-            where T : Delegate
-        {
-            if (TryResolveFirstMatching(regex, out IntPtr address))
-            {
-                function = Marshal.GetDelegateForFunctionPointer<T>(address);
-                return true;
-            }
-
-            function = null;
-            return false;
-        }
-
-        public IntPtr ResolveFirstMatching(Regex regex)
+        public void* ResolveFirstMatch(Regex regex)
         {
             var name = FindSymbolsMatching(regex).FirstOrDefault();
 
@@ -128,16 +95,10 @@ namespace Unity
             return GetAddressOrZero(name);
         }
 
-        public unsafe T* ResolveFirstMatching<T>(Regex regex)
+        public unsafe T* ResolveFirstMatch<T>(Regex regex)
             where T : unmanaged
         {
-            return (T*)ResolveFirstMatching(regex);
-        }
-
-        public T ResolveFirstFunctionMatching<T>(Regex regex)
-            where T : Delegate
-        {
-            return Marshal.GetDelegateForFunctionPointer<T>(ResolveFirstMatching(regex));
+            return (T*)ResolveFirstMatch(regex);
         }
     }
 }

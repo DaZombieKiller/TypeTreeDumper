@@ -23,7 +23,7 @@ namespace Unity
 
             public int InstanceID => nativeObject->InstanceID;
 
-            public IntPtr Pointer => new IntPtr(nativeObject);
+            public void* Pointer => nativeObject;
 
             public byte TemporaryFlags
             {
@@ -45,7 +45,7 @@ namespace Unity
                 get { return (uint)nativeObject->bits[CachedTypeIndexSection]; }
             }
 
-            public V1(IntPtr ptr)
+            public V1(void* ptr)
             {
                 nativeObject = (NativeObject*)ptr;
             }

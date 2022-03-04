@@ -1,48 +1,49 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
-using Dia2Lib;
+using TerraFX.Interop.Windows;
+using static TerraFX.Interop.Windows.Windows;
 
 namespace TypeTreeDumper
 {
-    static class DiaSourceFactory
+    static unsafe class DiaSourceFactory
     {
-        static readonly IntPtr s_Module;
+        public static HRESULT CreateDiaSource(IDiaDataSource** ppvObject)
+        {
+            return CreateInstance(__uuidof<DiaSource>(), __uuidof<IDiaDataSource>(), (void**)ppvObject);
+        }
 
-        static readonly DllGetClassObjectDelegate s_DllGetClassObject;
+        public static HRESULT CreateInstance(Guid* rclsid, Guid* riid, void** ppvObject)
+        {
+            using var factory = new ComPtr<IClassFactory>();
+            HRESULT hr = DllGetClassObject(rclsid, __uuidof<IClassFactory>(), (void**)factory.GetAddressOf());
 
-        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-        delegate void DllGetClassObjectDelegate(
-            in Guid classId,
-            in Guid interfaceId,
-            [MarshalAs(UnmanagedType.IUnknown)] out object @object
-        );
+            if (hr.FAILED)
+                return hr;
+
+            return factory.Get()->CreateInstance(null, riid, ppvObject);
+        }
+
+        [DllImport("msdia", ExactSpelling = true)]
+        public static extern HRESULT DllGetClassObject(Guid* rclsid, Guid* riid, void** ppv);
+
+        [DllImport("msdia", ExactSpelling = true)]
+        public static extern HRESULT DllCanUnloadNow();
 
         static DiaSourceFactory()
         {
+            NativeLibrary.SetDllImportResolver(typeof(DiaSourceFactory).Assembly, DiaDllResolver);
+        }
+
+        static IntPtr DiaDllResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName != "msdia")
+                return NativeLibrary.Load(libraryName, assembly, searchPath);
+
             if (Environment.Is64BitProcess)
-                s_Module = Kernel32.LoadLibrary("msdia140_amd64.dll");
+                return NativeLibrary.Load("msdia140_amd64.dll", assembly, searchPath);
             else
-                s_Module = Kernel32.LoadLibrary("msdia140.dll");
-
-            s_DllGetClassObject = Kernel32.GetProcAddress<DllGetClassObjectDelegate>(s_Module, "DllGetClassObject");
-        }
-
-        static void DllGetClassObject<T>(in Guid classId, out T @object)
-            where T : class
-        {
-            s_DllGetClassObject(classId, typeof(T).GUID, out var box);
-            @object = box as T;
-        }
-
-        public static IDiaDataSource CreateInstance()
-        {
-            DllGetClassObject(
-                typeof(DiaSourceClass).GUID,
-                out IClassFactory factory
-            );
-
-            factory.CreateInstance(null, out IDiaDataSource source);
-            return source;
+                return NativeLibrary.Load("msdia140.dll", assembly, searchPath);
         }
     }
 }
