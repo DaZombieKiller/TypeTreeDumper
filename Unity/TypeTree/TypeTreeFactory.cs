@@ -43,10 +43,7 @@ namespace Unity
             {
                 if (HasGetTypeTree)
                 {
-                    if (getTypeTree(@object.Pointer, flags, pointer) == 0)
-                    {
-                        throw new InvalidOperationException("Failed to get type tree");
-                    }
+                    getTypeTree(@object.Pointer, flags, pointer);
                 }
                 else
                 {
