@@ -1,11 +1,9 @@
 ﻿using System.IO;
 using System.Text;
-using System.Text.Json;
-using System.Text.Unicode;
-using System.Text.Encodings.Web;
 using System.Linq;
 using Unity;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace TypeTreeDumper
 {
@@ -221,11 +219,8 @@ namespace TypeTreeDumper
         {
             Logger.Info("Writing information json...");
             using var sw = new StreamWriter(Path.Combine(Options.OutputDirectory, "info.json"));
-            sw.Write(JsonSerializer.Serialize(info, new JsonSerializerOptions
-            {
-                Encoder       = JavaScriptEncoder.Create(UnicodeRanges.All),
-                WriteIndented = true
-            }));
+            using var jw = new JsonTextWriter(sw) { Indentation = 1, IndentChar = '\t' };
+            new JsonSerializer { Formatting = Formatting.Indented }.Serialize(jw, info);
         }
     }
 }
