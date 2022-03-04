@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Text.Unicode;
+using System.Text.Encodings.Web;
 using System.Linq;
 using Unity;
 using System.Collections.Generic;
@@ -221,6 +223,7 @@ namespace TypeTreeDumper
             using var sw = new StreamWriter(Path.Combine(Options.OutputDirectory, "info.json"));
             sw.Write(JsonSerializer.Serialize(info, new JsonSerializerOptions
             {
+                Encoder       = JavaScriptEncoder.Create(UnicodeRanges.All),
                 WriteIndented = true
             }));
         }
