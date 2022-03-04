@@ -1,13 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <RootNamespace>Unity</RootNamespace>
-        <TargetFramework>net472</TargetFramework>
+        <TargetFramework>net6.0-windows</TargetFramework>
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-        <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
-    </ItemGroup>
 </Project>
