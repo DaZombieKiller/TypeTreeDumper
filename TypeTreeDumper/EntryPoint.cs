@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using DetourSharp;
+using EasyHook;
 using Unity;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.Windows.Windows;
@@ -26,13 +26,13 @@ namespace TypeTreeDumper
 
         static FileVersionInfo VersionInfo;
 
-        static Detour AfterEverythingLoadedDetour;
+        static LocalHook AfterEverythingLoadedDetour;
 
-        static Detour PlayerInitEngineNoGraphicsDetour;
+        static LocalHook PlayerInitEngineNoGraphicsDetour;
 
-        static Detour ValidateDatesDetour;
+        static LocalHook ValidateDatesDetour;
 
-        static Detour InitializePackageManagerDetour;
+        static LocalHook InitializePackageManagerDetour;
 
         static void AttachToParentConsole()
         {
@@ -68,8 +68,8 @@ namespace TypeTreeDumper
                 {
                     if (resolver.TryResolve($"?Initialize@Api@PackageManager@@I{NameMangling.Ptr64}AAXXZ", out address))
                     {
-                        InitializePackageManagerDetour = new Detour(address, (delegate* unmanaged[Cdecl]<void>)&InitializePackageManager);
-                        InitializePackageManagerDetour.Attach();
+                        InitializePackageManagerDetour = LocalHook.CreateUnmanaged((IntPtr)address, (IntPtr)(delegate* unmanaged[Cdecl]<void>)&InitializePackageManager, IntPtr.Zero);
+                        InitializePackageManagerDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                     }
                 }
 
@@ -79,22 +79,22 @@ namespace TypeTreeDumper
                 }
                 else if (resolver.TryResolveFirstMatch(new Regex(Regex.Escape("?AfterEverythingLoaded@Application@") + "*"), out address))
                 {
-                    AfterEverythingLoadedDetour = new Detour(address, (delegate* unmanaged[Cdecl]<void*, void>)&AfterEverythingLoaded);
-                    AfterEverythingLoadedDetour.Attach();
+                    AfterEverythingLoadedDetour = LocalHook.CreateUnmanaged((IntPtr)address, (IntPtr)(delegate* unmanaged[Cdecl]<void*, void>)&AfterEverythingLoaded, IntPtr.Zero);
+                    AfterEverythingLoadedDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
                 else
                 {
                     address = resolver.ResolveFirstMatch(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
-                    PlayerInitEngineNoGraphicsDetour = new Detour(address, (delegate* unmanaged[Cdecl]<void*, void*, byte>)&PlayerInitEngineNoGraphics);
-                    PlayerInitEngineNoGraphicsDetour.Attach();
+                    PlayerInitEngineNoGraphicsDetour = LocalHook.CreateUnmanaged((IntPtr)address, (IntPtr)(delegate* unmanaged[Cdecl]<void*, void*, byte>)&PlayerInitEngineNoGraphics, IntPtr.Zero);
+                    PlayerInitEngineNoGraphicsDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
 
                 // Work around Unity 4.0 to 4.3 licensing bug
                 if (VersionInfo.FileMajorPart == 4 && VersionInfo.FileMinorPart <= 3)
                 {
                     address = resolver.Resolve($"?ValidateDates@LicenseManager@@QAEHP{NameMangling.Ptr64}AVDOMDocument@xercesc_3_1@@@Z");
-                    ValidateDatesDetour = new Detour(address, (delegate* unmanaged[Thiscall]<void*, void*, int>)&ValidateDates);
-                    ValidateDatesDetour.Attach();
+                    ValidateDatesDetour = LocalHook.CreateUnmanaged((IntPtr)address, (IntPtr)(delegate* unmanaged[Thiscall]<void*, void*, int>)&ValidateDates, IntPtr.Zero);
+                    ValidateDatesDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
 
                 OnEngineInitialized += PluginManager.LoadPlugins;
@@ -168,7 +168,7 @@ namespace TypeTreeDumper
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl)})]
         static byte PlayerInitEngineNoGraphics(void* a, void* b)
         {
-            ((delegate* unmanaged[Cdecl]<void*, void*, byte>)PlayerInitEngineNoGraphicsDetour.TrampolineAddress)(a, b);
+            ((delegate* unmanaged[Cdecl]<void*, void*, byte>)PlayerInitEngineNoGraphicsDetour.HookBypassAddress)(a, b);
             HandleEngineInitialization();
             return 1;
         }
@@ -176,7 +176,7 @@ namespace TypeTreeDumper
         [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
         static void AfterEverythingLoaded(void* app)
         {
-            ((delegate* unmanaged[Cdecl]<void*, void>)AfterEverythingLoadedDetour.TrampolineAddress)(app);
+            ((delegate* unmanaged[Cdecl]<void*, void>)AfterEverythingLoadedDetour.HookBypassAddress)(app);
             HandleEngineInitialization();
         }
 
