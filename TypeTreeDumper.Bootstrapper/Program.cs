@@ -107,7 +107,7 @@ namespace TypeTreeDumper
             CloseHandle(pi.hProcess);
             CloseHandle(pi.hThread);
 
-            var config = Path.Combine(AppContext.BaseDirectory, "TypeTreeDumper.runtimeconfig.json");
+            var config = Path.Combine(AppContext.BaseDirectory, "TypeTreeDumper.Bootstrapper.runtimeconfig.json");
 
             if (!File.Exists(config))
             {
