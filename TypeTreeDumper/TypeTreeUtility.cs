@@ -37,8 +37,8 @@ namespace TypeTreeDumper
                 node.ByteSize.ToString("x"),
                 node.Index.ToString("x"),
                 node.Version.ToString("x"),
-                (byte)node.TypeFlags,
-                ((uint)node.MetaFlag).ToString("x")
+                node.TypeFlags.ToString("x"),
+                node.MetaFlag.ToString("x")
             ));
 
             if (node.SubNodes != null)
