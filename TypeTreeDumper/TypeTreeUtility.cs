@@ -31,11 +31,12 @@ namespace TypeTreeDumper
                 writer.Write('\t');
             string type = node.TypeName;
             string name = node.Name;
-            writer.WriteLine(string.Format("{0} {1} // ByteSize{{{2}}}, Index{{{3}}}, IsArray{{{4}}}, MetaFlag{{{5}}}",
+            writer.WriteLine(string.Format("{0} {1} // ByteSize{{{2}}}, Index{{{3}}}, Version{{{4}}}, IsArray{{{5}}}, MetaFlag{{{6}}}",
                 type,
                 name,
                 node.ByteSize.ToString("x"),
                 node.Index.ToString("x"),
+                node.Version.ToString("x"),
                 (byte)node.TypeFlags,
                 ((uint)node.MetaFlag).ToString("x")
             ));
