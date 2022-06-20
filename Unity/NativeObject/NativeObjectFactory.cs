@@ -74,7 +74,9 @@ namespace Unity
             else if (version < UnityVersion.Unity2019_2)
             {
                 s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AUMonoObject@@H@Z");
-                s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z");
+                s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve(
+                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z",
+                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@_N@Z");
             }
             else
             {
