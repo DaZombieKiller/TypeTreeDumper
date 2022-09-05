@@ -6,32 +6,9 @@ namespace Unity
 {
     unsafe struct BasicString
     {
-        private readonly static int HeapStructSize = sizeof(HeapAllocatedRepresentation);
-
         public StringRepresentationUnion m_data_union;
         public StringRepresentation m_data_repr;
         public MemLabelId m_label;
-
-        public static explicit operator string(BasicString basicString) => basicString.GetString();
-
-        /// <summary>
-        /// Get an equivalent managed string
-        /// </summary>
-        /// <param name="basicString"></param>
-        /// <returns>A new string made from the underlying Utf8 data</returns>
-        public string GetString() => Encoding.UTF8.GetString(GetData());
-
-        /// <summary>
-        /// Get the Utf8 bytes for this string
-        /// </summary>
-        /// <returns>A span containing the data</returns>
-        public ReadOnlySpan<byte> GetData() => GetDataInternal(this);
-        private static ReadOnlySpan<byte> GetDataInternal(BasicString basicString)
-        {
-            return basicString.m_data_repr == StringRepresentation.Embedded
-                ? new ReadOnlySpan<byte>(&basicString, HeapStructSize - basicString.m_data_union.m_embedded.m_extra)
-                : new ReadOnlySpan<byte>(basicString.m_data_union.m_heap.m_data, (int)(uint)basicString.m_data_union.m_heap.m_size);
-        }
 
         /// <summary>
         /// Create a simple basic string
@@ -107,16 +84,37 @@ namespace Unity
                 m_data_repr = StringRepresentation.Embedded,
             };
 
-            int size = Math.Min(HeapStructSize, utf8String.Length);
-            Span<byte> embeddedData = new Span<byte>(&basicString, HeapStructSize);
+            int size = Math.Min(sizeof(HeapAllocatedRepresentation), utf8String.Length);
+            Span<byte> embeddedData = new Span<byte>(&basicString, sizeof(HeapAllocatedRepresentation));
             for(int i = 0; i < size; i++)
             {
                 embeddedData[i] = utf8String[i];
             }
-            basicString.m_data_union.m_embedded.m_extra = (byte)(HeapStructSize - size);
+            basicString.m_data_union.m_embedded.m_extra = (byte)(sizeof(HeapAllocatedRepresentation) - size);
 
             return basicString;
         }
+    }
+
+    internal static class BasicStringExtensions
+    {
+        /// <summary>
+        /// Get an equivalent managed string
+        /// </summary>
+        /// <remarks>
+        /// For data safety, this has to stay an extension method.
+        /// </remarks>
+        /// <param name="basicString">The basic string to </param>
+        /// <returns>A new string made from the underlying utf8 data</returns>
+        public unsafe static string GetString(this BasicString basicString)
+        {
+			ReadOnlySpan<byte> data = basicString.m_data_repr == StringRepresentation.Embedded
+                ? new ReadOnlySpan<byte>(&basicString, sizeof(HeapAllocatedRepresentation) - basicString.m_data_union.m_embedded.m_extra)
+                : new ReadOnlySpan<byte>(basicString.m_data_union.m_heap.m_data, (int)(uint)basicString.m_data_union.m_heap.m_capacity);
+            //Note: capacity is used here instead of size because Unity doesn't set size on some versions (such as 2019.4.3)
+
+            return Encoding.UTF8.GetString(data);
+		}
     }
 
     unsafe struct HeapAllocatedRepresentation
