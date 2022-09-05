@@ -108,13 +108,13 @@ namespace Unity
         /// <returns>A new string made from the underlying utf8 data</returns>
         public unsafe static string GetString(this BasicString basicString)
         {
-			ReadOnlySpan<byte> data = basicString.m_data_repr == StringRepresentation.Embedded
+            ReadOnlySpan<byte> data = basicString.m_data_repr == StringRepresentation.Embedded
                 ? new ReadOnlySpan<byte>(&basicString, sizeof(HeapAllocatedRepresentation) - basicString.m_data_union.m_embedded.m_extra)
                 : new ReadOnlySpan<byte>(basicString.m_data_union.m_heap.m_data, (int)(uint)basicString.m_data_union.m_heap.m_capacity);
             //Note: capacity is used here instead of size because Unity doesn't set size on some versions (such as 2019.4.3)
 
             return Encoding.UTF8.GetString(data);
-		}
+        }
     }
 
     unsafe struct HeapAllocatedRepresentation
