@@ -84,7 +84,7 @@ namespace Unity
                 s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z");
             }
 
-            if (version >= UnityVersion.Unity3_5)
+            if (version >= UnityVersion.Unity3_5 && version < UnityVersion.Unity2022_2)
             {
                 kMemBaseObject = resolver.Resolve<MemLabelId>(
                     "?kMemBaseObject@@3UMemLabelId@@A",
@@ -148,9 +148,10 @@ namespace Unity
             }
             else
             {
+                MemLabelId labelId = version < UnityVersion.Unity2022_2 ? *kMemBaseObject : MemLabelId.DefaultMemBaseObject_2020_2_6;
                 // TODO: Why does this take two types?
                 fixed (byte* typePtr = &type.GetPinnableReference())
-                    ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, *kMemBaseObject, creationMode);
+                    ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, labelId, creationMode);
             }
             if (ptr == null) return null;
             return new NativeObject(ptr, this, type.PersistentTypeID, version);
