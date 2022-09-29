@@ -13,6 +13,8 @@
 
         public NativeObjectFactory ObjectFactory { get; }
 
+        public JsonHandler JsonHandler { get; }
+
 
         public UnityEngine(UnityVersion version, SymbolResolver resolver)
         {
@@ -21,6 +23,7 @@
             RuntimeTypes  = new RuntimeTypeArray(version, resolver);
             TypeTreeFactory = new TypeTreeFactory(version, CommonString, resolver);
             ObjectFactory = new NativeObjectFactory(version, resolver);
+            JsonHandler = new JsonHandler(version, resolver);
         }
     }
 }
