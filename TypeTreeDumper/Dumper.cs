@@ -1,15 +1,15 @@
-﻿using System.IO;
-using System.Text;
-using System.Linq;
-using Unity;
+﻿using Newtonsoft.Json;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.IO;
+using System.Linq;
+using System.Text;
+using Unity;
 
 namespace TypeTreeDumper
 {
     static class Dumper
     {
-        static ExportOptions Options;
+        static ExportOptions Options = new();
 
         public static void Execute(UnityEngine engine, ExportOptions options, DumperEngine dumperEngine)
         {
@@ -25,6 +25,7 @@ namespace TypeTreeDumper
             }
             if (options.ExportTextDump)
             {
+                FieldValuesJsonDumper.ExportFieldValuesJson(engine, Path.Combine(Options.OutputDirectory, "fieldValues.json"));
                 ExportRTTI(info);
                 ExportStructDump(info, "structs.dump", true);
                 ExportStructDump(info, "editor_structs.dump", false);
