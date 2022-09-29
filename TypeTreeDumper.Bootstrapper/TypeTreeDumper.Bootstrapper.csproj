@@ -15,13 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ContentWithTargetPath Include="Libraries\EasyHook32.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>EasyHook32.dll</TargetPath>
-        </ContentWithTargetPath>
-        <ContentWithTargetPath Include="Libraries\EasyHook64.dll">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <TargetPath>EasyHook64.dll</TargetPath>
-        </ContentWithTargetPath>
+        <PackageReference Include="EasyHook" Version="2.7.7097" GeneratePathProperty="true" />
+        <Content Include="$(PkgEasyHook)\content\net40\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
 </Project>
