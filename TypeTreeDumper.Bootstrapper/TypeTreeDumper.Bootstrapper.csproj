@@ -3,14 +3,25 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0-windows</TargetFramework>
         <LangVersion>latest</LangVersion>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="CommandLineParser" Version="2.8.0" />
         <PackageReference Include="DetourSharp.Hosting" Version="1.0.0" />
         <PackageReference Include="System.Management" Version="6.0.0" />
-		<ProjectReference Include="..\TypeTreeDumper\TypeTreeDumper.csproj" />
-		<ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
+        <ProjectReference Include="..\TypeTreeDumper\TypeTreeDumper.csproj" />
+        <ProjectReference Include="..\TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ContentWithTargetPath Include="Libraries\EasyHook32.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>EasyHook32.dll</TargetPath>
+        </ContentWithTargetPath>
+        <ContentWithTargetPath Include="Libraries\EasyHook64.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <TargetPath>EasyHook64.dll</TargetPath>
+        </ContentWithTargetPath>
     </ItemGroup>
 </Project>
