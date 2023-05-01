@@ -21,6 +21,8 @@ namespace Unity
 
         readonly delegate* unmanaged[Cdecl]<void*> s_GetMonoManager;
 
+        readonly delegate* unmanaged[Cdecl]<void*> s_GetTimeManager;
+
         readonly delegate* unmanaged[Cdecl]<int, int, void*, ObjectCreationMode, void*> s_ProduceV3_4;
 
         readonly delegate* unmanaged[Cdecl]<int, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV3_5;
@@ -39,11 +41,16 @@ namespace Unity
 
         bool HasGetSpriteAtlasDatabase => version >= UnityVersion.Unity2017_1;
 
+        bool HasGetTimeManager => false;
+
         public NativeObjectFactory(UnityVersion version, SymbolResolver resolver)
         {
             this.version  = version;
             this.resolver = resolver;
-            
+
+            if (HasGetTimeManager)
+                s_GetTimeManager = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetTimeManager@@YAA{NameMangling.Ptr64}AVTimeManager@@XZ");
+
             if (HasGetSpriteAtlasDatabase)
                 s_GetSpriteAtlasDatabase = (delegate* unmanaged[Cdecl]<void*>)resolver.Resolve($"?GetSpriteAtlasDatabase@@YAA{NameMangling.Ptr64}AVSpriteAtlasDatabase@@XZ");
 
@@ -80,8 +87,14 @@ namespace Unity
             }
             else
             {
-                s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@H@Z");
-                s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve($"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z");
+                s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve(
+                    $"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@H@Z",
+                    "?EditorUtility_CUSTOM_InstanceIDToObject@@YA_KH@Z"
+                );
+                s_DestroyImmediate = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve(
+                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z",
+                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AXE@Z"
+                );
             }
 
             if (version >= UnityVersion.Unity3_5 && version < UnityVersion.Unity2022_2)
@@ -116,6 +129,11 @@ namespace Unity
         public NativeObject GetMonoManager()
         {
             return new NativeObject(s_GetMonoManager(), this, PersistentTypeID.MonoManager, version);
+        }
+
+        public NativeObject GetTimeManager()
+        {
+            return new NativeObject(s_GetTimeManager(), this, PersistentTypeID.TimeManager, version);
         }
 
         public NativeObject Produce(in RuntimeTypeInfo type, int instanceID, ObjectCreationMode creationMode)
@@ -164,6 +182,7 @@ namespace Unity
             PersistentTypeID.InspectorExpandedState => GetInspectorExpandedState(),
             PersistentTypeID.AnnotationManager => GetAnnotationManager(),
             PersistentTypeID.MonoManager => GetMonoManager(),
+            //PersistentTypeID.TimeManager => GetTimeManager(),
             _ => Produce(type, 0, ObjectCreationMode.Default),
         };
 

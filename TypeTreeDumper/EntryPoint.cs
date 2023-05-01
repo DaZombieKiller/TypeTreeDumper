@@ -43,26 +43,55 @@ namespace TypeTreeDumper
             Console.SetError(new StreamWriter(Console.OpenStandardError()) { AutoFlush = true });
         }
 
+        static ProcessModule GetUnityModule(Process process)
+        {
+            if (TryGetModule(process, "Unity.dll", out var module))
+                return module;
+
+            return process.MainModule;
+        }
+
+        static bool TryGetModule(Process process, string name, out ProcessModule module)
+        {
+            foreach (ProcessModule entry in process.Modules)
+            {
+                if (entry.ModuleName == name)
+                {
+                    module = entry;
+                    return true;
+                }
+            }
+
+            module = null;
+            return false;
+        }
+
         public static void Main(EntryPointArgs args)
         {
             try
             {
-                module      = Process.GetCurrentProcess().MainModule;
-                VersionInfo = FileVersionInfo.GetVersionInfo(module.FileName);
+                VersionInfo = FileVersionInfo.GetVersionInfo(Environment.ProcessPath);
+
+                // If we're on a version of Unity after the editor code was split into a
+                // separate dynamic library, it won't be loaded at this point. We need to
+                // access stuff inside it, so we try to load it here ahead of time.
+                NativeLibrary.TryLoad("Unity.dll", out _);
 
                 // Can cause 2017.1 & 2017.2 to hang, cause is currently unknown but may be
                 // related to the engine trying to attach to the package manager.
                 if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
                     AttachToParentConsole();
 
+                ConsoleLogger.Initialize(args.Silent, args.Verbose);
+
+                if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
+                    AttachToParentConsole();
+
+                module      = GetUnityModule(Process.GetCurrentProcess());
                 OutputPath  = args.OutputPath;
                 ProjectPath = args.ProjectPath;
                 resolver    = new DiaSymbolResolver(module);
                 void* address;
-
-                ConsoleLogger.Initialize(args.Silent, args.Verbose);
-                if (!(VersionInfo.FileMajorPart == 2017 && VersionInfo.FileMinorPart < 3))
-                    AttachToParentConsole();
 
                 if (VersionInfo.FileMajorPart == 2017)
                 {
@@ -84,7 +113,10 @@ namespace TypeTreeDumper
                 }
                 else
                 {
-                    address = resolver.ResolveFirstMatch(new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"));
+                    address = resolver.ResolveFirstMatch(
+                        new Regex(Regex.Escape("?PlayerInitEngineNoGraphics@") + "*"),
+                        new Regex(Regex.Escape("?InitializeEngineNoGraphics@") + "*")
+                    );
                     PlayerInitEngineNoGraphicsDetour = LocalHook.CreateUnmanaged((IntPtr)address, (IntPtr)(delegate* unmanaged[Cdecl]<void*, void*, byte>)&PlayerInitEngineNoGraphics, IntPtr.Zero);
                     PlayerInitEngineNoGraphicsDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }

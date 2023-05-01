@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper.Bootstrapper
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper", "TypeTreeDumper\TypeTreeDumper.csproj", "{CCF692AC-723D-4E90-86C8-66CDD6FD4027}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Unity", "Unity\Unity.csproj", "{42AE78A9-4BF2-4E1D-966D-08A0728A4C42}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnityInterop", "UnityInterop\UnityInterop.csproj", "{42AE78A9-4BF2-4E1D-966D-08A0728A4C42}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeTreeDumper.Loader", "TypeTreeDumper.Loader\TypeTreeDumper.Loader.csproj", "{3F065ACF-8723-4AAD-A916-A11621AECA96}"
 EndProject
