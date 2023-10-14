@@ -8,7 +8,7 @@ namespace Unity
     unsafe struct DynamicArray
     {
         public IntPtr Ptr;
-        public MemLabelId Label;
+        public uint Label;
         public ulong Size;
         public ulong Capacity;
     }
@@ -17,7 +17,7 @@ namespace Unity
         where T : unmanaged
     {
         public T* Ptr;
-        public MemLabelId Label;
+        public uint Label;
         public ulong Size;
         public ulong Capacity;
 

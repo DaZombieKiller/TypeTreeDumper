@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Specialized;
 
 namespace Unity
 {
-    public unsafe partial class NativeObject : IDisposable
+	public unsafe partial class NativeObject
     {
         INativeObjectImpl nativeObject;
 
@@ -30,14 +29,6 @@ namespace Unity
             }
             this.factory = factory;
             this.persistentTypeID = persistentTypeID;
-        }
-
-        public void Dispose()
-        {
-            if (nativeObject != null)
-            {
-                factory.DestroyIfNotSingletonOrPersistent(this, persistentTypeID);
-            }
         }
 
         public byte TemporaryFlags => nativeObject.TemporaryFlags;
