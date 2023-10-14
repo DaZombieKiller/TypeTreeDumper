@@ -10,20 +10,23 @@ namespace TypeTreeDumper
         public uint Index { get; set; }
         public string String { get; set; }
 
-		internal static List<UnityString> MakeList(CommonString strings)
+		internal unsafe static List<UnityString> MakeList(CommonString strings)
 		{
-			byte[] data = strings.GetData();
+			var data = strings.GetData();
 			var result = new List<UnityString>();
 
-			using (var stream = new MemoryStream(data))
+			fixed (byte* pData = data)
 			{
-				using (var reader = new BinaryReader(stream))
+				using (var stream = new UnmanagedMemoryStream(pData, data.Length))
 				{
-					while (stream.Position < stream.Length)
+					using (var reader = new BinaryReader(stream))
 					{
-						uint position = (uint)stream.Position;
-						string str = ReadStringToNull(reader);
-						result.Add(new UnityString() { Index = position, String = str });
+						while (stream.Position < stream.Length)
+						{
+							uint position = (uint)stream.Position;
+							string str = ReadStringToNull(reader);
+							result.Add(new UnityString() { Index = position, String = str });
+						}
 					}
 				}
 			}

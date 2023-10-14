@@ -8,8 +8,8 @@ namespace Unity
 {
     public partial class TypeTree
     {
-        // Unity 2019.3 - 2022.1
-        unsafe class V2019_3 : ITypeTreeImpl
+        // Unity 2023.1.0a2+
+        unsafe class V2023_1 : ITypeTreeImpl
         {
             internal TypeTree Tree;
 
@@ -21,13 +21,16 @@ namespace Unity
 
             private TypeTreeNode[] m_Nodes;
 
-            public V2019_3(ManagedTypeTree owner, SymbolResolver resolver)
+            public V2023_1(ManagedTypeTree owner, SymbolResolver resolver)
             {
-                var constructor = (delegate* unmanaged[Cdecl]<TypeTree*, MemLabelId*, void>)resolver.Resolve($"??0TypeTree@@Q{NameMangling.Ptr64}AA@A{NameMangling.Ptr64}BUMemLabelId@@@Z");
-                var label = resolver.Resolve<MemLabelId>("?kMemTypeTree@@3UMemLabelId@@A");
-                TypeTree tree;
-                constructor(&tree, label);
-                Tree = tree;
+                //var constructor = (delegate* unmanaged[Cdecl]<TypeTree*, MemLabelId*, void>)resolver.Resolve($"??0TypeTree@@Q{NameMangling.Ptr64}AA@A{NameMangling.Ptr64}BUMemLabelId@@@Z");
+                //MemLabelId label = MemLabelId.DefaultMemTypeTree_2020_2_6;
+                //TypeTree tree;
+                //constructor(&tree, &label);
+                //Tree = tree;
+
+                //Strangely, the constructor seems unnecessary even though it's still present on this version.
+                Tree = default;
             }
 
             public ref byte GetPinnableReference()
@@ -54,12 +57,14 @@ namespace Unity
 
             internal struct TypeTreeShareableData
             {
-                public DynamicArray<TypeTreeNode.V2019_1.TypeTreeNode, MemLabelId> Nodes;
-                public DynamicArray<byte, MemLabelId> StringBuffer;
-                public DynamicArray<uint, MemLabelId> ByteOffsets;
+                public DynamicArray<TypeTreeNode.V2019_1.TypeTreeNode, MemoryLabelIdentifier> Nodes;
+                public DynamicArray<byte, MemoryLabelIdentifier> Levels;
+                public DynamicArray<int, MemoryLabelIdentifier> NextIndex;
+                public DynamicArray<byte, MemoryLabelIdentifier> StringBuffer;
+                public DynamicArray<uint, MemoryLabelIdentifier> ByteOffsets;
                 public TransferInstructionFlags FlagsAtGeneration;
                 public int RefCount;
-                public MemLabelId* MemLabel;
+                public MemoryLabelIdentifier* MemLabel;
             }
         }
     }

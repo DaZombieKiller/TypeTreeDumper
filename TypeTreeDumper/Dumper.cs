@@ -26,7 +26,8 @@ namespace TypeTreeDumper
             if (options.ExportTextDump)
             {
                 //Dumping field values is broken on 2023
-                //FieldValuesJsonDumper.ExportFieldValuesJson(engine, Path.Combine(Options.OutputDirectory, "fieldValues.json"));
+                if (engine.Version < UnityVersion.Unity2023_1)
+                    FieldValuesJsonDumper.ExportFieldValuesJson(engine, Path.Combine(Options.OutputDirectory, "fieldValues.json"));
                 ExportRTTI(info);
                 ExportStructDump(info, "structs.dump", true);
                 ExportStructDump(info, "editor_structs.dump", false);
@@ -67,7 +68,7 @@ namespace TypeTreeDumper
 
         static void ExportStringData(CommonString strings)
         {
-            byte[] data = strings.GetData();
+            byte[] data = strings.GetData().ToArray();
             if (data.Length == 0)
                 return;
 

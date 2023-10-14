@@ -18,19 +18,14 @@ namespace Unity
                 BufferEnd = *(sbyte**)end;
         }
 
-        public unsafe byte[] GetData()
+        public unsafe ReadOnlySpan<byte> GetData()
         {
             if (BufferBegin == null || BufferEnd == null)
-                return Array.Empty<byte>();
+                return ReadOnlySpan<byte>.Empty;
 
             var source = (byte*)BufferBegin;
             var length = (byte*)BufferEnd - source - 1;
-            var buffer = new byte[length];
-
-            fixed (byte* destination = buffer)
-                Buffer.MemoryCopy(source, destination, length, length);
-
-            return buffer;
+            return new ReadOnlySpan<byte>(source, (int)length);
         }
     }
 }

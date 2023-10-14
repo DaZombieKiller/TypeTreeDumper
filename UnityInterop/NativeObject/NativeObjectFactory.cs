@@ -25,7 +25,9 @@
 
         readonly delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV5_5;
 
-        readonly delegate* unmanaged[Cdecl]<byte*, byte*, int, uint, ObjectCreationMode, void*> s_ProduceV2017_2;
+        readonly delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV2017_2;
+
+        readonly delegate* unmanaged[Cdecl]<byte*, byte*, int, MemoryLabelIdentifier, ObjectCreationMode, void*> s_ProduceV2023_1_0a2;
 
         bool HasGetSceneVisibilityState => version >= UnityVersion.Unity2019_1;
 
@@ -59,7 +61,10 @@
             else if (version < UnityVersion.Unity2017_2)
                 s_ProduceV5_5 = (delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
             else
-                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, uint, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
+            {
+                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
+                s_ProduceV2023_1_0a2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemoryLabelIdentifier, ObjectCreationMode, void*>)s_ProduceV2017_2;
+            }
 
             if (version >= UnityVersion.Unity3_5 && version < UnityVersion.Unity2022_2)
             {
@@ -100,7 +105,7 @@
             return new NativeObject(s_GetTimeManager(), this, PersistentTypeID.TimeManager, version);
         }
 
-        public NativeObject Produce(in RuntimeTypeInfo type, int instanceID, ObjectCreationMode creationMode)
+        public NativeObject Produce(RuntimeTypeInfo type, int instanceID, ObjectCreationMode creationMode)
         {
             // TODO: Support producing abstract types. To do this, the following steps are necessary:
             //       1. Replace T::VirtualRedirectTransfer with T::Transfer. This can be done by either
@@ -130,18 +135,28 @@
             }
             else
             {
-                MemLabelId labelId = kMemBaseObject != null ? *kMemBaseObject : MemLabelId.DefaultMemBaseObject_2020_2_6;
                 // TODO: Why does this take two types?
                 // The first type parameter is the source type.
                 // The second type parameter is the destination type. If default, this function returns null.
                 fixed (byte* typePtr = &type.GetPinnableReference())
-                    ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, uint.MinValue, creationMode);
+                {
+                    if (version < UnityVersion.Unity2023_1_0a2)
+                    {
+                        MemLabelId labelId = kMemBaseObject != null ? *kMemBaseObject : MemLabelId.DefaultMemBaseObject_2020_2_6;
+                        ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, labelId, creationMode);
+                    }
+                    else
+                    {
+                        MemoryLabelIdentifier labelId = kMemBaseObject != null ? *(MemoryLabelIdentifier*)kMemBaseObject : MemLabelId.DefaultMemBaseObject_2020_2_6.Identifier;
+                        ptr = s_ProduceV2023_1_0a2(typePtr, typePtr, instanceID, labelId, creationMode);
+                    }
+                }
             }
 
             return ptr == null ? null : new NativeObject(ptr, this, type.PersistentTypeID, version);
         }
 
-        public NativeObject GetOrProduce(in RuntimeTypeInfo type) => type.PersistentTypeID switch
+        public NativeObject GetOrProduce(RuntimeTypeInfo type) => type.PersistentTypeID switch
         {
             PersistentTypeID.SpriteAtlasDatabase => GetSpriteAtlasDatabase(),
             PersistentTypeID.SceneVisibilityState => GetSceneVisibilityState(),
