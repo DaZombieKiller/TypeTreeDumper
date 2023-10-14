@@ -1,15 +1,11 @@
-﻿using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-
-namespace Unity
+﻿namespace Unity
 {
     public unsafe class NativeObjectFactory
     {
-        UnityVersion version;
-        SymbolResolver resolver;
+        readonly UnityVersion version;
+        readonly SymbolResolver resolver;
 
-        MemLabelId* kMemBaseObject;
+        readonly MemLabelId* kMemBaseObject;
 
         readonly delegate* unmanaged[Cdecl]<void*> s_GetSpriteAtlasDatabase;
 
@@ -29,13 +25,7 @@ namespace Unity
 
         readonly delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV5_5;
 
-        readonly delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*> s_ProduceV2017_2;
-
-        readonly delegate* unmanaged[Cdecl]<int, byte*> s_InstanceIDToObject;
-
-        readonly delegate* unmanaged[Cdecl]<void*, byte, void> s_DestroyImmediate;
-
-        readonly delegate* unmanaged[Cdecl]<void*, byte, void> s_DestroyObjectFromScriptingImmediate;
+        readonly delegate* unmanaged[Cdecl]<byte*, byte*, int, uint, ObjectCreationMode, void*> s_ProduceV2017_2;
 
         bool HasGetSceneVisibilityState => version >= UnityVersion.Unity2019_1;
 
@@ -66,36 +56,10 @@ namespace Unity
                 s_ProduceV3_4 = (delegate* unmanaged[Cdecl]<int, int, void*, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHP{NameMangling.Ptr64}AVBaseAllocator@@W4ObjectCreationMode@@@Z");
             else if (version < UnityVersion.Unity5_5)
                 s_ProduceV3_5 = (delegate* unmanaged[Cdecl]<int, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@HHUMemLabelId@@W4ObjectCreationMode@@@Z");
-            else if(version < UnityVersion.Unity2017_2)
+            else if (version < UnityVersion.Unity2017_2)
                 s_ProduceV5_5 = (delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
             else
-                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
-
-            if (version < UnityVersion.Unity5_5)
-            {
-                s_DestroyObjectFromScriptingImmediate = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve(
-                    $"?DestroyObjectFromScriptingImmediate@Scripting@@YAXP{NameMangling.Ptr64}AVObject@@_N@Z",
-                    $"?DestroyObjectFromScriptingImmediate@@YAXP{NameMangling.Ptr64}AVObject@@_N@Z"
-                );
-            }
-            else if (version < UnityVersion.Unity2019_2)
-            {
-                s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve($"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AUMonoObject@@H@Z");
-                s_DestroyImmediate   = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve(
-                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@E@Z",
-                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AUMonoObject@@_N@Z");
-            }
-            else
-            {
-                s_InstanceIDToObject = (delegate* unmanaged[Cdecl]<int, byte*>)resolver.Resolve(
-                    $"?EditorUtility_CUSTOM_InstanceIDToObject@@YAP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@H@Z",
-                    "?EditorUtility_CUSTOM_InstanceIDToObject@@YA_KH@Z"
-                );
-                s_DestroyImmediate = (delegate* unmanaged[Cdecl]<void*, byte, void>)resolver.Resolve(
-                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AVScriptingBackendNativeObjectPtrOpaque@@E@Z",
-                    $"?Object_CUSTOM_DestroyImmediate@@YAXP{NameMangling.Ptr64}AXE@Z"
-                );
-            }
+                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, uint, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
 
             if (version >= UnityVersion.Unity3_5 && version < UnityVersion.Unity2022_2)
             {
@@ -166,13 +130,15 @@ namespace Unity
             }
             else
             {
-                MemLabelId labelId = version < UnityVersion.Unity2022_2 ? *kMemBaseObject : MemLabelId.DefaultMemBaseObject_2020_2_6;
+                MemLabelId labelId = kMemBaseObject != null ? *kMemBaseObject : MemLabelId.DefaultMemBaseObject_2020_2_6;
                 // TODO: Why does this take two types?
+                // The first type parameter is the source type.
+                // The second type parameter is the destination type. If default, this function returns null.
                 fixed (byte* typePtr = &type.GetPinnableReference())
-                    ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, labelId, creationMode);
+                    ptr = s_ProduceV2017_2(typePtr, typePtr, instanceID, uint.MinValue, creationMode);
             }
-            if (ptr == null) return null;
-            return new NativeObject(ptr, this, type.PersistentTypeID, version);
+
+            return ptr == null ? null : new NativeObject(ptr, this, type.PersistentTypeID, version);
         }
 
         public NativeObject GetOrProduce(in RuntimeTypeInfo type) => type.PersistentTypeID switch
@@ -185,31 +151,5 @@ namespace Unity
             //PersistentTypeID.TimeManager => GetTimeManager(),
             _ => Produce(type, 0, ObjectCreationMode.Default),
         };
-
-        public void DestroyIfNotSingletonOrPersistent(NativeObject obj, PersistentTypeID persistentTypeID)
-        {
-            if (obj.IsPersistent)
-                return;
-
-            switch (persistentTypeID)
-            {
-                case PersistentTypeID.SpriteAtlasDatabase:
-                case PersistentTypeID.SceneVisibilityState:
-                case PersistentTypeID.InspectorExpandedState:
-                case PersistentTypeID.AnnotationManager:
-                case PersistentTypeID.MonoManager:
-                case PersistentTypeID.AssetBundle:
-                    return;
-            }
-            if (version < UnityVersion.Unity5_5)
-            {
-                s_DestroyObjectFromScriptingImmediate(obj.Pointer, 0);
-            }
-            else
-            {
-                var managed = s_InstanceIDToObject(obj.InstanceID);
-                s_DestroyImmediate(managed, 0);
-            }
-        }
     }
 }

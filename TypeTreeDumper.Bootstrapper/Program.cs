@@ -21,11 +21,14 @@ namespace TypeTreeDumper
         [Option('o', "output", HelpText = "Directory to export to.")]
         public string OutputDirectory { get; set; }
 
-        [Option('v', "verbose", Default = false, HelpText = "Verbose logging output.")]
+        [Option("verbose", Default = false, HelpText = "Verbose logging output.")]
         public bool Verbose { get; set; }
 
         [Option('s', "silent", Default = false, HelpText = "No logging output except errors.")]
         public bool Silent { get; set; }
+
+        [Option("debug", Default = false, HelpText = "If true, a debugger will be attached after entry into the Unity process.")]
+        public bool Debug { get; set; }
     }
 
     class Program
@@ -123,6 +126,7 @@ namespace TypeTreeDumper
                 ProjectPath = projectDirectory,
                 Verbose = options.Verbose,
                 Silent = options.Silent,
+                Debug = options.Debug,
                 ThreadHandle = (ulong)hThread,
             });
 
