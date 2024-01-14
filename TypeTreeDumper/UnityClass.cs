@@ -60,7 +60,7 @@ namespace TypeTreeDumper
                         iter = iter.Base;
                 }
 
-                using var obj = engine.ObjectFactory.GetOrProduce(iter);
+                var obj = engine.ObjectFactory.GetOrProduce(iter);
 
                 if (obj != null)
                 {

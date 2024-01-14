@@ -217,7 +217,7 @@ namespace TypeTreeDumper
                     continue;
                 }
 
-                using NativeObject obj = engine.ObjectFactory.GetOrProduce(type);
+                NativeObject obj = engine.ObjectFactory.GetOrProduce(type);
 
                 if (obj == null)
                 {

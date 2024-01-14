@@ -25,7 +25,9 @@ namespace TypeTreeDumper
             }
             if (options.ExportTextDump)
             {
-                FieldValuesJsonDumper.ExportFieldValuesJson(engine, Path.Combine(Options.OutputDirectory, "fieldValues.json"));
+                //Dumping field values is broken on 2023
+                if (engine.Version < UnityVersion.Unity2023_1)
+                    FieldValuesJsonDumper.ExportFieldValuesJson(engine, Path.Combine(Options.OutputDirectory, "fieldValues.json"));
                 ExportRTTI(info);
                 ExportStructDump(info, "structs.dump", true);
                 ExportStructDump(info, "editor_structs.dump", false);
@@ -66,7 +68,7 @@ namespace TypeTreeDumper
 
         static void ExportStringData(CommonString strings)
         {
-            byte[] data = strings.GetData();
+            byte[] data = strings.GetData().ToArray();
             if (data.Length == 0)
                 return;
 
@@ -134,7 +136,7 @@ namespace TypeTreeDumper
                 );
 
                 Logger.Verb("[{0}] Producing native object...", typeCount);
-                using var obj = engine.ObjectFactory.GetOrProduce(iter);
+                var obj = engine.ObjectFactory.GetOrProduce(iter);
 
                 if (obj == null)
                     continue;

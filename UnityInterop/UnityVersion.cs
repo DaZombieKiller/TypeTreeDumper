@@ -108,6 +108,10 @@ namespace Unity
 
         public static readonly UnityVersion Unity2022_2 = new UnityVersion(2022, 2);
 
+        public static readonly UnityVersion Unity2023_1 = new UnityVersion(2023, 1);
+
+        public static readonly UnityVersion Unity2023_1_0a2 = new UnityVersion(2023, 1, 0, 'a', 2);
+
         public UnityVersion(int major, int minor)
             : this(major, minor, 0, 0, 0)
         {

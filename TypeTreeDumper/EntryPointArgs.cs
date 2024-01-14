@@ -8,6 +8,7 @@ namespace TypeTreeDumper
         public string ProjectPath { get; set; }
         public bool Verbose { get; set; }
         public bool Silent { get; set; }
+        public bool Debug { get; set; }
         public ulong ThreadHandle { get; set; }
     }
 }

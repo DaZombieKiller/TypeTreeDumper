@@ -16,7 +16,7 @@ namespace TypeTreeDumper
     {
         static ProcessModule module;
 
-        static DiaSymbolResolver resolver;
+        static SymbolResolver resolver;
 
         static event Action OnEngineInitialized;
 
@@ -33,6 +33,9 @@ namespace TypeTreeDumper
         static LocalHook ValidateDatesDetour;
 
         static LocalHook InitializePackageManagerDetour;
+
+        //This can be removed. I initially had it in for debugging, but it never got called.
+        static LocalHook AssertImplementationDetour;
 
         static void AttachToParentConsole()
         {
@@ -68,6 +71,11 @@ namespace TypeTreeDumper
 
         public static void Main(EntryPointArgs args)
         {
+            if (args.Debug)
+            {
+                Debugger.Launch();
+            }
+
             try
             {
                 VersionInfo = FileVersionInfo.GetVersionInfo(Environment.ProcessPath);
@@ -127,6 +135,12 @@ namespace TypeTreeDumper
                     address = resolver.Resolve($"?ValidateDates@LicenseManager@@QAEHP{NameMangling.Ptr64}AVDOMDocument@xercesc_3_1@@@Z");
                     ValidateDatesDetour = LocalHook.CreateUnmanaged((IntPtr)address, (IntPtr)(delegate* unmanaged[Thiscall]<void*, void*, int>)&ValidateDates, IntPtr.Zero);
                     ValidateDatesDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
+                }
+
+                if (resolver.TryResolve(@"?AssertImplementation@@YA_NHPEBDHH0@Z", out void* assertAddress))
+                {
+                    AssertImplementationDetour = LocalHook.CreateUnmanaged((IntPtr)assertAddress, (IntPtr)(delegate* unmanaged[Cdecl]<int, sbyte*, int, int, sbyte*, byte>)&AssertImplementation, IntPtr.Zero);
+                    AssertImplementationDetour.ThreadACL.SetExclusiveACL(Array.Empty<int>());
                 }
 
                 OnEngineInitialized += PluginManager.LoadPlugins;
@@ -210,6 +224,17 @@ namespace TypeTreeDumper
         {
             ((delegate* unmanaged[Cdecl]<void*, void>)AfterEverythingLoadedDetour.HookBypassAddress)(app);
             HandleEngineInitialization();
+        }
+
+        [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvCdecl) })]
+        static byte AssertImplementation(int instanceID, sbyte* filePtr, int line, int column, sbyte* messagePtr)
+        {
+            var mono = FindProcessModule(new Regex("^mono", RegexOptions.IgnoreCase)).BaseAddress;
+            var MonoStringToUTF8 = (delegate* unmanaged[Cdecl]<sbyte*, void*>)NativeLibrary.GetExport(mono, "mono_string_to_utf8");
+            string file = Marshal.PtrToStringAnsi((IntPtr)MonoStringToUTF8(filePtr));
+            string message = Marshal.PtrToStringAnsi((IntPtr)MonoStringToUTF8(messagePtr));
+            Logger.Error($"Unity assertion for instance ID {instanceID}\n\tLocation: {file} at ({line}, {column})\n\tMessage: {message}");
+            return ((delegate* unmanaged[Cdecl]<int, sbyte*, int, int, sbyte*, byte>)AssertImplementationDetour.HookBypassAddress)(instanceID, filePtr, line, column, messagePtr);
         }
 
         static void HandleEngineInitialization()

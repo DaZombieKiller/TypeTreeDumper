@@ -48,9 +48,9 @@ namespace Unity
 
             internal struct TypeTree
             {
-                public DynamicArray<TypeTreeNode.V5_0.TypeTreeNode> Nodes;
-                public DynamicArray<byte> StringBuffer;
-                public DynamicArray<uint> ByteOffsets;
+                public DynamicArray<TypeTreeNode.V5_0.TypeTreeNode, MemLabelId> Nodes;
+                public DynamicArray<byte, MemLabelId> StringBuffer;
+                public DynamicArray<uint, MemLabelId> ByteOffsets;
             }
         }
     }

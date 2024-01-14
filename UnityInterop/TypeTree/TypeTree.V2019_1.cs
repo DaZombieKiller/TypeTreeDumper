@@ -52,9 +52,9 @@ namespace Unity
 
             internal struct TypeTreeShareableData
             {
-                public DynamicArray<TypeTreeNode.V2019_1.TypeTreeNode> Nodes;
-                public DynamicArray<byte> StringBuffer;
-                public DynamicArray<uint> ByteOffsets;
+                public DynamicArray<TypeTreeNode.V2019_1.TypeTreeNode, MemLabelId> Nodes;
+                public DynamicArray<byte, MemLabelId> StringBuffer;
+                public DynamicArray<uint, MemLabelId> ByteOffsets;
                 public TransferInstructionFlags FlagsAtGeneration;
                 public int RefCount;
                 public MemLabelId* MemLabel;
