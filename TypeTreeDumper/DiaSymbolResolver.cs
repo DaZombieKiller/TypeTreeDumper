@@ -40,7 +40,7 @@ namespace TypeTreeDumper
                 yield return GetSymbolName(i);
             }
 
-            int InitializeAndGetCount()
+            unsafe int InitializeAndGetCount()
             {
                 session.Value.Get()->get_globalScope(globalScope.GetAddressOf());
 
@@ -52,7 +52,7 @@ namespace TypeTreeDumper
                 return count;
             }
 
-            string GetSymbolName(int index)
+            unsafe string GetSymbolName(int index)
             {
                 using ComPtr<IDiaSymbol> symbol = default;
                 enumSymbols.Get()->Item((uint)index, symbol.GetAddressOf());
