@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -41,6 +42,10 @@ namespace TypeTreeDumper
             }
             dumperEngine.InvokeExportCompleted(engine, options);
             Logger.Info("Success");
+
+            // Kill the process since we're done and don't want to wait for Unity to exit on its own.
+            // Unity 6.2+ requires this.
+            Process.GetCurrentProcess().Kill();
         }
 
         static void ExportRTTI(UnityInfo info)

@@ -62,7 +62,11 @@
                 s_ProduceV5_5 = (delegate* unmanaged[Cdecl]<byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@SAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@HUMemLabelId@@W4ObjectCreationMode@@@Z");
             else
             {
-                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve($"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z");
+                // https://github.com/DaZombieKiller/TypeTreeDumper/issues/42
+                var symbolName = version < new UnityVersion(6000, 2, 0, UnityVersionType.Alpha, 8)
+                    ? $"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0HUMemLabelId@@W4ObjectCreationMode@@@Z"
+                    : $"?Produce@Object@@CAP{NameMangling.Ptr64}AV1@P{NameMangling.Ptr64}BVType@Unity@@0UEntityId@@UMemLabelId@@W4ObjectCreationMode@@@Z";
+                s_ProduceV2017_2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemLabelId, ObjectCreationMode, void*>)resolver.Resolve(symbolName);
                 s_ProduceV2023_1_0a2 = (delegate* unmanaged[Cdecl]<byte*, byte*, int, MemoryLabelIdentifier, ObjectCreationMode, void*>)s_ProduceV2017_2;
             }
 

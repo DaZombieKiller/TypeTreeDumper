@@ -10,6 +10,7 @@ using CommandLine;
 using TerraFX.Interop.Windows;
 using static TerraFX.Interop.Windows.Windows;
 using static TerraFX.Interop.Windows.CREATE;
+using System.Runtime.InteropServices;
 
 namespace TypeTreeDumper
 {
@@ -118,19 +119,26 @@ namespace TypeTreeDumper
                 File.WriteAllText(config, DefaultRuntimeConfig);
             }
 
-            using var runtime = new RemoteRuntime((int)pi.dwProcessId);
-            runtime.Initialize(config);
-            runtime.Invoke(((Delegate)EntryPoint.Main).Method, new EntryPointArgs
+            try
             {
-                OutputPath = Path.GetFullPath(options.OutputDirectory ?? Path.Combine(System.AppContext.BaseDirectory, "Output")),
-                ProjectPath = projectDirectory,
-                Verbose = options.Verbose,
-                Silent = options.Silent,
-                Debug = options.Debug,
-                ThreadHandle = (ulong)hThread,
-            });
+                using var runtime = new RemoteRuntime((int)pi.dwProcessId);
+                runtime.Initialize(config);
+                runtime.Invoke(((Delegate)EntryPoint.Main).Method, new EntryPointArgs
+                {
+                    OutputPath = Path.GetFullPath(options.OutputDirectory ?? Path.Combine(System.AppContext.BaseDirectory, "Output")),
+                    ProjectPath = projectDirectory,
+                    Verbose = options.Verbose,
+                    Silent = options.Silent,
+                    Debug = options.Debug,
+                    ThreadHandle = (ulong)hThread,
+                });
 
-            Process.GetProcessById((int)pi.dwProcessId).WaitForExit();
+                Process.GetProcessById((int)pi.dwProcessId).WaitForExit();
+            }
+            catch (COMException)
+            {
+                // Process killed after completion
+            }
         }
 
         static ManagementBaseObject GetManagementObjectForProcess(Process process)
