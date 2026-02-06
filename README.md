@@ -1,3 +1,8 @@
+> [!NOTE]
+> Development on TypeTreeDumper has suspended and the project is now in maintenance mode.
+>
+> Future development will take place in the [TypeTreeRipper](https://github.com/DaZombieKiller/TypeTreeRipper) project.
+
 # TypeTreeDumper
 
 This is an automated tool for dumping struct information from a Unity Installation.
